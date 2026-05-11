@@ -1,5 +1,14 @@
 // src/runtime.js
+/**
+ * Base class for Avenx components.
+ * Handles reactivity, rendering, and event binding.
+ */
 export class AvenxComponent {
+    /**
+     * Creates an instance of AvenxComponent.
+     * @param {Object} [initialState={}] - The initial local state of the component.
+     * @param {Object} [bridges={}] - Shared reactive states (bridges) accessible to the component.
+     */
     constructor(initialState = {}, bridges = {}) {
         this.element = null;
         this._template = '';
@@ -20,7 +29,13 @@ export class AvenxComponent {
         });
     }
 
-    // Führt Inline-Code (@click) im Kontext der Komponente aus
+    /**
+     * Executes a string of JavaScript code in the context of the component.
+     * Used for inline event handlers (e.g., @click="count++").
+     * @param {string} code - The code to execute.
+     * @param {Event|null} [event=null] - The event object if triggered by an event.
+     * @private
+     */
     _execute(code, event = null) {
         const context = { ...this.state, ...this.methods, ...this.bridges, event };
         try {
@@ -29,6 +44,10 @@ export class AvenxComponent {
         } catch (e) { console.error("Avenx Exec Error:", e); }
     }
 
+    /**
+     * Renders the component's template by interpolating expressions.
+     * @returns {string} The rendered HTML string.
+     */
     render() {
         let html = this._template;
         // Einfache {{ var }} Interpolation
@@ -43,12 +62,19 @@ export class AvenxComponent {
         });
     }
 
+    /**
+     * Updates the component's DOM element with the rendered template and re-binds events.
+     */
     update() {
         if (!this.element) return;
         this.element.innerHTML = this.render();
         this._bindEvents();
     }
 
+    /**
+     * Scans the component's DOM for attributes starting with '@' and binds them as event listeners.
+     * @private
+     */
     _bindEvents() {
         this.element.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(attr => {
@@ -63,21 +89,45 @@ export class AvenxComponent {
         });
     }
 
+    /**
+     * Mounts the component to a target DOM element.
+     * @param {HTMLElement} target - The DOM element where the component should be mounted.
+     */
     mount(target) {
         this.element = target;
         this.update();
     }
 }
 
+/**
+ * Main application class for Avenx.
+ * Manages component registration, bridges, and application mounting.
+ */
 export class AvenxApp {
+    /**
+     * Creates an instance of AvenxApp.
+     * @param {Object} config - The application configuration.
+     * @param {string} config.target - The selector for the main application target element.
+     */
     constructor(config) {
         this.target = document.querySelector(config.target);
         this.components = new Map();
         this.bridges = {};
         this.activeComponents = [];
     }
+
+    /**
+     * Registers a component class with a given name.
+     * @param {string} name - The name of the component.
+     * @param {AvenxComponent} compClass - The component class (constructor) to register.
+     */
     register(name, compClass) { this.components.set(name, compClass); }
     
+    /**
+     * Registers a shared reactive state (bridge).
+     * @param {string} name - The name of the bridge.
+     * @param {Object} initialState - The initial state of the bridge.
+     */
     registerBridge(name, initialState) {
         const self = this;
         const reactiveState = new Proxy(initialState, {
@@ -93,10 +143,18 @@ export class AvenxApp {
         this.bridges[name] = reactiveState;
     }
 
+    /**
+     * Triggers an update (re-render) for all active component instances.
+     */
     updateAll() {
         this.activeComponents.forEach(comp => comp.update());
     }
 
+    /**
+     * Mounts a registered component to a target element.
+     * @param {string} name - The name of the registered component.
+     * @param {string|null} [targetSelector=null] - The selector for the target element. If null, uses the app's default target.
+     */
     mount(name, targetSelector = null) {
         const Comp = this.components.get(name);
         const target = targetSelector ? document.querySelector(targetSelector) : this.target;

@@ -1,5 +1,14 @@
 // src/runtime.js
+/**
+ * Base class for Avenx components.
+ * Handles reactivity, rendering, and event binding.
+ */
 class AvenxComponent {
+    /**
+     * Creates an instance of AvenxComponent.
+     * @param {Object} [initialState={}] - The initial local state of the component.
+     * @param {Object} [bridges={}] - Shared reactive states (bridges) accessible to the component.
+     */
     constructor(initialState = {}, bridges = {}) {
         this.element = null;
         this._template = '';
@@ -20,7 +29,13 @@ class AvenxComponent {
         });
     }
 
-    // Führt Inline-Code (@click) im Kontext der Komponente aus
+    /**
+     * Executes a string of JavaScript code in the context of the component.
+     * Used for inline event handlers (e.g., @click="count++").
+     * @param {string} code - The code to execute.
+     * @param {Event|null} [event=null] - The event object if triggered by an event.
+     * @private
+     */
     _execute(code, event = null) {
         const context = { ...this.state, ...this.methods, ...this.bridges, event };
         try {
@@ -29,6 +44,10 @@ class AvenxComponent {
         } catch (e) { console.error("Avenx Exec Error:", e); }
     }
 
+    /**
+     * Renders the component's template by interpolating expressions.
+     * @returns {string} The rendered HTML string.
+     */
     render() {
         let html = this._template;
         // Einfache {{ var }} Interpolation
@@ -43,12 +62,19 @@ class AvenxComponent {
         });
     }
 
+    /**
+     * Updates the component's DOM element with the rendered template and re-binds events.
+     */
     update() {
         if (!this.element) return;
         this.element.innerHTML = this.render();
         this._bindEvents();
     }
 
+    /**
+     * Scans the component's DOM for attributes starting with '@' and binds them as event listeners.
+     * @private
+     */
     _bindEvents() {
         this.element.querySelectorAll('*').forEach(el => {
             Array.from(el.attributes).forEach(attr => {
@@ -63,21 +89,45 @@ class AvenxComponent {
         });
     }
 
+    /**
+     * Mounts the component to a target DOM element.
+     * @param {HTMLElement} target - The DOM element where the component should be mounted.
+     */
     mount(target) {
         this.element = target;
         this.update();
     }
 }
 
+/**
+ * Main application class for Avenx.
+ * Manages component registration, bridges, and application mounting.
+ */
 class AvenxApp {
+    /**
+     * Creates an instance of AvenxApp.
+     * @param {Object} config - The application configuration.
+     * @param {string} config.target - The selector for the main application target element.
+     */
     constructor(config) {
         this.target = document.querySelector(config.target);
         this.components = new Map();
         this.bridges = {};
         this.activeComponents = [];
     }
+
+    /**
+     * Registers a component class with a given name.
+     * @param {string} name - The name of the component.
+     * @param {AvenxComponent} compClass - The component class (constructor) to register.
+     */
     register(name, compClass) { this.components.set(name, compClass); }
     
+    /**
+     * Registers a shared reactive state (bridge).
+     * @param {string} name - The name of the bridge.
+     * @param {Object} initialState - The initial state of the bridge.
+     */
     registerBridge(name, initialState) {
         const self = this;
         const reactiveState = new Proxy(initialState, {
@@ -93,10 +143,18 @@ class AvenxApp {
         this.bridges[name] = reactiveState;
     }
 
+    /**
+     * Triggers an update (re-render) for all active component instances.
+     */
     updateAll() {
         this.activeComponents.forEach(comp => comp.update());
     }
 
+    /**
+     * Mounts a registered component to a target element.
+     * @param {string} name - The name of the registered component.
+     * @param {string|null} [targetSelector=null] - The selector for the target element. If null, uses the app's default target.
+     */
     mount(name, targetSelector = null) {
         const Comp = this.components.get(name);
         const target = targetSelector ? document.querySelector(targetSelector) : this.target;
@@ -112,20 +170,13 @@ class Counter extends AvenxComponent {
     constructor(bridges) {
         super({"count":0,"step":1}, bridges);
         this._template = `<div class="avenx-e287f5e0">
-    
-
     <h1 @click="count = 0" class="avenx-9337e1c1">
-        
         Avenx-JS @css PoC
     </h1>
-    
     <div class="avenx-fce01bb2">
-        
         {{ count }}
     </div>
-
     <button @click="count += step; log()" class="avenx-ab40aff8">
-        
         Erhöhen (+{{ step }})
     </button>
 </div>`;
@@ -136,13 +187,10 @@ class Display extends AvenxComponent {
     constructor(bridges) {
         super({}, bridges);
         this._template = `<div class="avenx-74e33e8e">
-    
     <div class="avenx-63f81c08">
-        
         Globaler Brücken-Zähler
     </div>
     <div class="avenx-1053fd5c">
-        
         {{ CounterBridge.count }}
     </div>
 </div>`;
@@ -153,13 +201,10 @@ class Source extends AvenxComponent {
     constructor(bridges) {
         super({}, bridges);
         this._template = `<div class="avenx-5ea87827">
-    
     <div class="avenx-11ab6060">
-        
         Brücken-Steuerung
     </div>
     <button @click="CounterBridge.count++" class="avenx-1f9e7009">
-        
         Zähler erhöhen
     </button>
 </div>`;

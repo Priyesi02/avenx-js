@@ -72,3 +72,8 @@ No import or registration required within the template. Just use the bridge name
 
 ### 3. Run and View
 Open your `index.html` (which should link to `dist/bundle.js` and `dist/bundle.css`) in a browser.
+
+### 4. Create docs
+```cmd
+jsdoc -r . -d docs
+```

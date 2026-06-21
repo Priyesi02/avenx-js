@@ -4,7 +4,7 @@ const assert = require('assert');
 const { execSync } = require('child_process');
 
 const TEST_DIR = path.join(__dirname, 'test-project');
-const BIN_PATH = path.join(__dirname, '../bin/avenx.js');
+const BIN_PATH = path.join(__dirname, '../../bin/avenx.js');
 
 function setup() {
     if (fs.existsSync(TEST_DIR)) {

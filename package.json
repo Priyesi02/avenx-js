@@ -28,7 +28,11 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node test/cli.test.js && node test/unit.test.js",
+    "test": "node test/run-tests.js",
+    "test:unit": "node test/run-tests.js unit",
+    "test:integration": "node test/run-tests.js integration",
+    "test:system": "node test/run-tests.js system",
+    "test:e2e": "node test/run-tests.js e2e",
     "test:coverage": "c8 --reporter=text --reporter=html npm test",
     "bench": "node benches/run.js",
     "bench:report": "node benches/run.js --json > bench-results/results.json",

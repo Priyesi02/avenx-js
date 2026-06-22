@@ -40,7 +40,7 @@ class AvenxCLI {
                 this.buildProject();
                 break;
             case 'serve':
-                this.serveProject(args[0] || 3000);
+                this.serveProject(args[0] || process.env.PORT || 3000);
                 break;
             case 'help':
             default:

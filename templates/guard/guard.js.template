@@ -1,0 +1,19 @@
+import { AvenxGuard } from 'avenx-js/runtime';
+
+/**
+ * {{ name }} handles route protection.
+ */
+export default class {{ name }} extends AvenxGuard {
+    /**
+     * Determines whether the route can be activated.
+     * @param {Object} to - The target route object (contains hash, page, params).
+     * @param {Object} from - The current route object (contains hash, page, params).
+     * @returns {boolean|string|Promise<boolean|string>}
+     */
+    canActivate(to, from) {
+        // Return true to allow navigation
+        // Return false to abort navigation
+        // Return a string (e.g., '/login') to redirect
+        return true;
+    }
+}

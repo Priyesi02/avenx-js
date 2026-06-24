@@ -167,6 +167,11 @@ export class AvenxRouter {
      * @param hash Target path hash (e.g. `#/profile/123`).
      */
     navigate(hash: string): void;
+
+    /**
+     * Destroys the router and cleans up event listeners.
+     */
+    destroy(): void;
 }
 
 /**

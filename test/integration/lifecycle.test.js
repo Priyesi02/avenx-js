@@ -17,6 +17,7 @@ try {
         appendChild: () => {},
         removeChild: () => {},
         replaceWith: () => {},
+        dispatchEvent: () => {},
         childNodes: []
     };
 

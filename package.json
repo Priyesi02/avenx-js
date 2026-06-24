@@ -36,7 +36,9 @@
     "test:coverage": "c8 --reporter=text --reporter=html npm test",
     "bench": "node benches/run.js",
     "bench:report": "node benches/run.js --json > bench-results/results.json",
-    "docs": "jsdoc -c jsdoc.json"
+    "docs": "jsdoc -c jsdoc.json",
+    "lint": "eslint \"**/*.js\"",
+    "format": "prettier --write \"**/*.js\" \"**/*.md\" \"**/*.json\""
   },
   "keywords": [
     "reactive",
@@ -62,7 +64,11 @@
   },
   "homepage": "https://avenx-js.com/",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "c8": "^9.1.0",
+    "eslint": "^10.5.0",
+    "eslint-plugin-jsdoc": "^63.0.7",
     "jsdoc": "^4.0.2",
-    "c8": "^9.1.0"
+    "prettier": "^3.8.4"
   }
 }

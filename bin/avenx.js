@@ -29,6 +29,8 @@ class AvenxCLI {
             case 'g':
                 if (type === 'bridge') {
                     this.generateBridge(name);
+                } else if (type === 'guard') {
+                    this.generateGuard(name);
                 } else if (type === 'page' || type === 'p') {
                     this.generatePage(name);
                 } else {
@@ -37,10 +39,11 @@ class AvenxCLI {
                 }
                 break;
             case 'build':
+            case 'b':
                 this.buildProject();
                 break;
             case 'serve':
-                this.serveProject(args[0] || 3000);
+                this.serveProject(args[0] || process.env.PORT || 3000);
                 break;
             case 'help':
             default:
@@ -58,6 +61,7 @@ class AvenxCLI {
             'src/components',
             'src/pages',
             'src/global',
+            'src/guards',
             'dist',
             '.vscode'
         ];
@@ -95,7 +99,7 @@ class AvenxCLI {
         // Create initial main.app.js
         const mainAppPath = path.join(this.baseDir, 'src/main.app.js');
         if (!fs.existsSync(mainAppPath)) {
-            fs.writeFileSync(mainAppPath, "import { AvenxApp } from 'avenx-js/runtime';\n\nconst app = new AvenxApp({ target: '#app' });\n");
+            fs.writeFileSync(mainAppPath, "import { AvenxApp } from 'avenx-core/runtime';\n\nconst app = new AvenxApp({ target: '#app' });\n");
             console.log('  Created: src/main.app.js');
         }
 
@@ -116,7 +120,7 @@ class AvenxCLI {
             .split(/[-_]/)
             .map(part => part.charAt(0).toUpperCase() + part.slice(1))
             .join('') + "Bridge";
-        
+
         const globalDir = path.join(this.baseDir, 'src/global');
         if (!fs.existsSync(globalDir)) {
             fs.mkdirSync(globalDir, { recursive: true });
@@ -141,6 +145,44 @@ class AvenxCLI {
     }
 
     /**
+     * Generates a new Guard class and template file.
+     */
+    generateGuard(name) {
+        if (!name) {
+            console.error('❌ Error: Please provide a guard name (e.g., avenx g guard auth)');
+            return;
+        }
+
+        const lowerName = name.toLowerCase();
+        const capitalizedName = lowerName
+            .split(/[-_]/)
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+            .join('') + "Guard";
+
+        const guardDir = path.join(this.baseDir, 'src/guards');
+        if (!fs.existsSync(guardDir)) {
+            fs.mkdirSync(guardDir, { recursive: true });
+        }
+
+        const guardPath = path.join(guardDir, `${lowerName}.guard.js`);
+
+        if (fs.existsSync(guardPath)) {
+            console.error(`❌ Error: Guard '${lowerName}' already exists.`);
+            return;
+        }
+
+        const template = fs.readFileSync(path.join(this.frameworkDir, 'templates/guard/guard.js.template'), 'utf-8');
+
+        fs.writeFileSync(
+            guardPath,
+            template.replace(/{{ name }}/g, capitalizedName)
+        );
+
+        console.log(`✅ Guard '${capitalizedName}' generated at src/guards/${lowerName}.guard.js`);
+        console.log(`ℹ️ It can be used in your route configurations.`);
+    }
+
+    /**
      * Generates a new Page class and template files.
      */
     generatePage(name) {
@@ -154,7 +196,7 @@ class AvenxCLI {
             .split(/[-_]/)
             .map(part => part.charAt(0).toUpperCase() + part.slice(1))
             .join('');
-        
+
         const pageDir = path.join(this.baseDir, 'src/pages');
         if (!fs.existsSync(pageDir)) {
             fs.mkdirSync(pageDir, { recursive: true });
@@ -192,7 +234,7 @@ class AvenxCLI {
             .split(/[-_]/)
             .map(part => part.charAt(0).toUpperCase() + part.slice(1))
             .join('');
-        
+
         const compDir = path.join(this.baseDir, 'src/components', lowerName);
 
         if (fs.existsSync(compDir)) {
@@ -278,12 +320,29 @@ class AvenxCLI {
      * Starts a local development server and watches for changes.
      */
     serveProject(port) {
+        this.liveReloadClients = [];
         this.buildProject();
         this.watchProject();
 
         const server = http.createServer((req, res) => {
+            if (req.url === '/__avenx_live_reload__') {
+                res.writeHead(200, {
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive'
+                });
+                res.write('data: connected\n\n');
+
+                this.liveReloadClients.push(res);
+
+                req.on('close', () => {
+                    this.liveReloadClients = this.liveReloadClients.filter(client => client !== res);
+                });
+                return;
+            }
+
             let filePath = path.join(this.baseDir, req.url === '/' ? 'index.html' : req.url);
-            
+
             if (!fs.existsSync(filePath) && !path.extname(filePath)) {
                 filePath = path.join(this.baseDir, 'index.html');
             }
@@ -312,8 +371,30 @@ class AvenxCLI {
                         res.end('Server error: ' + error.code);
                     }
                 } else {
+                    let responseContent = content;
+                    if (contentType === 'text/html') {
+                        const script = `
+<script>
+    if ('EventSource' in window) {
+        const source = new EventSource('/__avenx_live_reload__');
+        source.onmessage = (e) => {
+            if (e.data === 'reload') {
+                window.location.reload();
+            }
+        };
+    }
+</script>
+`;
+                        const contentStr = content.toString('utf-8');
+                        if (contentStr.includes('</body>')) {
+                            responseContent = contentStr.replace('</body>', `${script}</body>`);
+                        } else {
+                            responseContent = contentStr + script;
+                        }
+                    }
+
                     res.writeHead(200, { 'Content-Type': contentType });
-                    res.end(content, 'utf-8');
+                    res.end(responseContent, 'utf-8');
                 }
             });
         });
@@ -341,6 +422,12 @@ class AvenxCLI {
                 timeout = setTimeout(() => {
                     console.log(`\n📄 Change detected: ${filename}. Rebuilding...`);
                     this.buildProject();
+
+                    if (this.liveReloadClients) {
+                        this.liveReloadClients.forEach(client => {
+                            client.write('data: reload\n\n');
+                        });
+                    }
                 }, 100);
             }
         });
@@ -378,7 +465,8 @@ Commands:
   generate component <name> Generate a new component (alias: g)
   generate page <name>      Generate a new page (alias: g p)
   generate bridge <name>    Generate a new shared reactive bridge
-  build                     Build the project into dist/bundle.js
+  generate guard <name>     Generate a new route guard
+  build (b)                 Build the project into dist/bundle.js
   serve [port]              Start dev server with hot-reload (default: 3000)
   help                      Show this help message
         `);

@@ -28,6 +28,13 @@ const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
             querySelectorAll: () => []
         };
 
+        global.DOMParser = class {
+            parseFromString() {
+                return { body: mockElement };
+            }
+        };
+        global.Node = { ELEMENT_NODE: 1, TEXT_NODE: 3 };
+
         let hashListeners = [];
         global.window = {
             addEventListener: (event, cb) => {
@@ -52,10 +59,22 @@ const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
 
         class TestPage extends AvenxPage {
             constructor(bridges, componentRegistry) {
-                super({}, {}, bridges, '<div>Test Page</div>', {}, componentRegistry);
+                super(
+                    {}, // initialState
+                    {}, // computed
+                    bridges,
+                    '<div>Test Page</div>',
+                    {
+                        onUpdate: () => {
+                            mountedPageName = this.constructor.name;
+                            mountedParams = this.params;
+                        }
+                    },
+                    componentRegistry
+                );
             }
             mount(target) {
-                super.__setMountTarget(target);
+                super.mount(target);
                 mountedPageName = this.constructor.name;
                 mountedParams = this.params;
             }

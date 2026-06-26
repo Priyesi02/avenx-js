@@ -17,6 +17,32 @@ class AvenxCLI {
         this.frameworkDir = path.join(__dirname, '..');
     }
 
+    /**
+     * Reads a template, checking the local .avenxtemplates/ folder first.
+     * Checks for:
+     * 1. Structured path: <project_root>/.avenxtemplates/<subfolder>/<filename>
+     * 2. Flat path: <project_root>/.avenxtemplates/<filename>
+     * 3. Global path: <framework_dir>/templates/<subfolder>/<filename>
+     *
+     * @param {string} subfolder - The template subfolder (e.g., 'component', 'page', 'vscode')
+     * @param {string} filename - The template filename (e.g., 'component.js.template')
+     * @returns {string} The template file content
+     */
+    readTemplate(subfolder, filename) {
+        const localStructuredPath = path.join(this.baseDir, '.avenxtemplates', subfolder, filename);
+        if (fs.existsSync(localStructuredPath)) {
+            return fs.readFileSync(localStructuredPath, 'utf-8');
+        }
+
+        const localFlatPath = path.join(this.baseDir, '.avenxtemplates', filename);
+        if (fs.existsSync(localFlatPath)) {
+            return fs.readFileSync(localFlatPath, 'utf-8');
+        }
+
+        const globalPath = path.join(this.frameworkDir, 'templates', subfolder, filename);
+        return fs.readFileSync(globalPath, 'utf-8');
+    }
+
     run(command, args) {
         const type = args[0];
         const name = args[1];
@@ -77,14 +103,14 @@ class AvenxCLI {
         // Create initial .vscode files
         const jsConfigPath = path.join(this.baseDir, '.vscode/jsconfig.json');
         if (!fs.existsSync(jsConfigPath)) {
-            const template = fs.readFileSync(path.join(this.frameworkDir, 'templates/vscode/jsconfig.json.template'), 'utf-8');
+            const template = this.readTemplate('vscode', 'jsconfig.json.template');
             fs.writeFileSync(jsConfigPath, template);
             console.log('  Created: .vscode/jsconfig.json');
         }
 
         const settingsPath = path.join(this.baseDir, '.vscode/settings.json');
         if (!fs.existsSync(settingsPath)) {
-            const template = fs.readFileSync(path.join(this.frameworkDir, 'templates/vscode/settings.json.template'), 'utf-8');
+            const template = this.readTemplate('vscode', 'settings.json.template');
             fs.writeFileSync(settingsPath, template);
             console.log('  Created: .vscode/settings.json');
         }
@@ -133,7 +159,7 @@ class AvenxCLI {
             return;
         }
 
-        const template = fs.readFileSync(path.join(this.frameworkDir, 'templates/bridge/bridge.js.template'), 'utf-8');
+        const template = this.readTemplate('bridge', 'bridge.js.template');
 
         fs.writeFileSync(
             bridgePath,
@@ -171,7 +197,7 @@ class AvenxCLI {
             return;
         }
 
-        const template = fs.readFileSync(path.join(this.frameworkDir, 'templates/guard/guard.js.template'), 'utf-8');
+        const template = this.readTemplate('guard', 'guard.js.template');
 
         fs.writeFileSync(
             guardPath,
@@ -210,8 +236,8 @@ class AvenxCLI {
             return;
         }
 
-        const jsTemplate = fs.readFileSync(path.join(this.frameworkDir, 'templates/page/page.js.template'), 'utf-8');
-        const cssTemplate = fs.readFileSync(path.join(this.frameworkDir, 'templates/page/page.css.template'), 'utf-8');
+        const jsTemplate = this.readTemplate('page', 'page.js.template');
+        const cssTemplate = this.readTemplate('page', 'page.css.template');
 
         fs.writeFileSync(jsPath, jsTemplate.replace(/{{ name }}/g, capitalizedName));
         fs.writeFileSync(cssPath, cssTemplate);
@@ -244,8 +270,8 @@ class AvenxCLI {
 
         fs.mkdirSync(compDir, { recursive: true });
 
-        const jsTemplate = fs.readFileSync(path.join(this.frameworkDir, 'templates/component/component.js.template'), 'utf-8');
-        const cssTemplate = fs.readFileSync(path.join(this.frameworkDir, 'templates/component/component.css.template'), 'utf-8');
+        const jsTemplate = this.readTemplate('component', 'component.js.template');
+        const cssTemplate = this.readTemplate('component', 'component.css.template');
 
         fs.writeFileSync(
             path.join(compDir, `${lowerName}.component.js`),

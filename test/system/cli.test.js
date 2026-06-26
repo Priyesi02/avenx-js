@@ -68,6 +68,56 @@ function runTest() {
         
         console.log('✅ All build tests passed!');
 
+        console.log('🧪 Testing avenx generate component with global template...');
+        execSync(`node ${BIN_PATH} generate component default-box`, { cwd: TEST_DIR });
+        const defaultBoxJs = fs.readFileSync(path.join(TEST_DIR, 'src/components/default-box/default-box.component.js'), 'utf-8');
+        assert.ok(defaultBoxJs.includes('DefaultBox Component'), 'Should contain default title');
+
+        console.log('🧪 Testing avenx generate component with custom project-level templates...');
+        // Create local templates folder
+        const localTemplatesDir = path.join(TEST_DIR, '.avenxtemplates');
+        fs.mkdirSync(localTemplatesDir, { recursive: true });
+
+        // Test flat custom template file
+        fs.writeFileSync(
+            path.join(localTemplatesDir, 'component.js.template'),
+            '// CUSTOM FLAT TEMPLATE\nclass {{ name }} extends AvenxComponent {}'
+        );
+        fs.writeFileSync(
+            path.join(localTemplatesDir, 'component.css.template'),
+            '/* CUSTOM FLAT CSS */'
+        );
+
+        execSync(`node ${BIN_PATH} generate component custom-flat-box`, { cwd: TEST_DIR });
+        
+        const customFlatBoxJs = fs.readFileSync(path.join(TEST_DIR, 'src/components/custom-flat-box/custom-flat-box.component.js'), 'utf-8');
+        const customFlatBoxCss = fs.readFileSync(path.join(TEST_DIR, 'src/components/custom-flat-box/custom-flat-box.component.css'), 'utf-8');
+        assert.ok(customFlatBoxJs.includes('// CUSTOM FLAT TEMPLATE'), 'Should use custom flat JS template');
+        assert.ok(customFlatBoxJs.includes('class CustomFlatBox extends AvenxComponent'), 'Should replace template variables correctly');
+        assert.strictEqual(customFlatBoxCss.trim(), '/* CUSTOM FLAT CSS */', 'Should use custom flat CSS template');
+
+        // Test structured custom template file (taking precedence over flat)
+        const structuredCompDir = path.join(localTemplatesDir, 'component');
+        fs.mkdirSync(structuredCompDir, { recursive: true });
+        fs.writeFileSync(
+            path.join(structuredCompDir, 'component.js.template'),
+            '// CUSTOM STRUCTURED TEMPLATE\nclass {{ name }} extends AvenxComponent {}'
+        );
+        fs.writeFileSync(
+            path.join(structuredCompDir, 'component.css.template'),
+            '/* CUSTOM STRUCTURED CSS */'
+        );
+
+        execSync(`node ${BIN_PATH} generate component custom-struct-box`, { cwd: TEST_DIR });
+
+        const customStructBoxJs = fs.readFileSync(path.join(TEST_DIR, 'src/components/custom-struct-box/custom-struct-box.component.js'), 'utf-8');
+        const customStructBoxCss = fs.readFileSync(path.join(TEST_DIR, 'src/components/custom-struct-box/custom-struct-box.component.css'), 'utf-8');
+        assert.ok(customStructBoxJs.includes('// CUSTOM STRUCTURED TEMPLATE'), 'Should prioritize custom structured JS template');
+        assert.ok(customStructBoxJs.includes('class CustomStructBox extends AvenxComponent'), 'Should replace template variables correctly');
+        assert.strictEqual(customStructBoxCss.trim(), '/* CUSTOM STRUCTURED CSS */', 'Should prioritize custom structured CSS template');
+
+        console.log('✅ Custom project-level templates tests passed!');
+
     } catch (error) {
         console.error('❌ Test failed!');
         console.error(error);

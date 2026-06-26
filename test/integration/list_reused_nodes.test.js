@@ -466,6 +466,23 @@ global.Node = {
         assert.strictEqual(items[0], bobNode, 'Only Bob node should remain');
         assert.strictEqual(items[0].customState, 'state-bob');
 
+        // Set the list to null (non-array) and verify DOM items are cleaned up
+        comp.state.items = null;
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        items = testRootElement.querySelectorAll('[data-ax-list-item]');
+        assert.strictEqual(items.length, 0, 'All list items should be removed when list is null');
+
+        // Reset list back to an array
+        comp.state.items = [
+            { id: 3, name: 'Charlie' }
+        ];
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        items = testRootElement.querySelectorAll('[data-ax-list-item]');
+        assert.strictEqual(items.length, 1, 'Should render list items again when array is restored');
+        assert.strictEqual(items[0].textContent, 'Charlie');
+
         console.log('  ✅ List Item Node Stability and In-place Patching tests passed!');
     } catch (error) {
         console.error('❌ List Item Node Stability and In-place Patching tests failed!');

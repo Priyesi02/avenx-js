@@ -513,8 +513,6 @@ global.Node = {
       'A new child component instance should be constructed',
     );
 
-
-
     // 5. Unmount Parent Page (unmounts all nested child components)
     parentPage.unmount();
     assert.strictEqual(childUnmounts, 2, 'Child component should call onUnmount when parent page is unmounted');

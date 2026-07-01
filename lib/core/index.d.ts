@@ -142,6 +142,12 @@ export class AvenxPage extends AvenxComponent {
     );
 }
 
+export interface AvenxRouterOptions {
+    prefix?: string;
+    guardTimeout?: number;
+    guardTimeoutRedirect?: string;
+}
+
 /**
  * AvenxRouter handles hash-based routing for the application.
  * It maps URL hashes to specific Page components.
@@ -165,10 +171,12 @@ export class AvenxRouter {
     /**
      * @param app AvenxApp instance.
      * @param routes Mapped routes.
+     * @param options Router options.
      */
     constructor(
         app: AvenxApp,
-        routes?: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>
+        routes?: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>,
+        options?: AvenxRouterOptions
     );
 
     /**
@@ -261,9 +269,11 @@ export class AvenxApp {
     /**
      * Scaffolds hash-change router listeners.
      * @param routes Map of URL hashes.
+     * @param options Router options.
      */
     initRouter(
-        routes: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>
+        routes: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>,
+        options?: AvenxRouterOptions
     ): AvenxRouter;
 }
 

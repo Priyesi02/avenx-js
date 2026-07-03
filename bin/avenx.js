@@ -5,6 +5,7 @@ const path = require('path');
 const http = require('http');
 const { exec } = require('child_process');
 const AvenxCompiler = require('../lib/compiler');
+const loadConfig = require('../lib/config');
 
 const [, , command, ...args] = process.argv;
 
@@ -36,8 +37,8 @@ class AvenxCLI {
   constructor() {
     this.baseDir = process.cwd();
     this.frameworkDir = path.join(__dirname, '..');
+    this.config = loadConfig();
   }
-
   /**
    * Reads a template, checking the local .avenxtemplates/ folder first.
    * Checks for:
@@ -49,12 +50,12 @@ class AvenxCLI {
    * @returns {string} The template file content
    */
   readTemplate(subfolder, filename) {
-    const localStructuredPath = path.join(this.baseDir, '.avenxtemplates', subfolder, filename);
+    const localStructuredPath = path.join(this.baseDir, this.config.templatesDir, subfolder, filename);
     if (fs.existsSync(localStructuredPath)) {
       return fs.readFileSync(localStructuredPath, 'utf-8');
     }
 
-    const localFlatPath = path.join(this.baseDir, '.avenxtemplates', filename);
+    const localFlatPath = path.join(this.baseDir, this.config.templatesDir, filename);
     if (fs.existsSync(localFlatPath)) {
       return fs.readFileSync(localFlatPath, 'utf-8');
     }
@@ -98,7 +99,11 @@ class AvenxCLI {
         this.checkProject(args);
         break;
       case 'serve':
-        this.serveProject(args[0] || process.env.PORT || 3000);
+        this.serveProject(
+          args[0] ||
+          process.env.PORT ||
+          this.config.server.port
+        );
         break;
       case 'help':
       default:
@@ -112,7 +117,14 @@ class AvenxCLI {
    */
   initProject() {
     console.log('🚀 Initializing new Avenx-JS project...');
-    const dirs = ['src/components', 'src/pages', 'src/global', 'src/guards', 'dist', '.vscode'];
+    const dirs = [
+      `${this.config.srcDir}/components`,
+      `${this.config.srcDir}/pages`,
+      `${this.config.srcDir}/global`,
+      `${this.config.srcDir}/guards`,
+      this.config.distDir,
+      '.vscode'
+    ];
 
     dirs.forEach((dir) => {
       const fullPath = path.join(this.baseDir, dir);
@@ -515,13 +527,15 @@ class AvenxCLI {
     return `<!DOCTYPE html>
 <html>
 <head>
+    <title>My Avenx App</title>
+    <link rel="stylesheet" href="${this.config.distDir}/bundle.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Avenx App</title>
   <link rel="stylesheet" href="dist/bundle.css">
 </head>
 <body>
     <div id="app"></div>
-    <script src="dist/bundle.js"></script>
+    <script src="${this.config.distDir}/bundle.js"></script>
 </body>
 </html>`;
   }
@@ -540,7 +554,7 @@ Commands:
   generate page <name>      Generate a new page (alias: g p)
   generate bridge <name>    Generate a new shared reactive bridge
   generate guard <name>     Generate a new route guard
-  build (b)                 Build the project into dist/bundle.js
+  build (b)                 Build the project using configured output directory
   check (lint)              Validate templates without building
   serve [port]              Start dev server with hot-reload (default: 3000)
   help                      Show this help message

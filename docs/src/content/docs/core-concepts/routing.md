@@ -14,7 +14,7 @@ Pages are top-level components located inside `src/pages/`. They extend `AvenxPa
 Define routes in your `src/main.app.js` file by mapping path patterns to page names:
 
 ```javascript
-import { AvenxApp } from 'avenx-js/runtime';
+import { AvenxApp } from 'avenx-core/runtime';
 
 const app = new AvenxApp({ target: '#app' });
 

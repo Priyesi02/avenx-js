@@ -38,6 +38,8 @@ Every contribution — whether code, documentation, or ideas — helps move the 
 - [@kernelpanic888](https://github.com/kernelpanic888)
 - [@Shivam-1502](https://github.com/Shivam-1502)
 - [@Prasiddhi26](https://github.com/Prasiddhi26)
+- [@TrooperZ](https://github.com/TrooperZ)
+
 
 ---
 

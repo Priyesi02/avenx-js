@@ -35,10 +35,10 @@ class AvenxCLI {
    * Creates an instance of AvenxCLI.
    * Initializes the base directory and framework directory paths.
    */
-  constructor() {
-    this.baseDir = process.cwd();
+  constructor(options = {}) {
+    this.baseDir = options.baseDir || process.cwd();
     this.frameworkDir = path.join(__dirname, '..');
-    this.config = loadConfig();
+    this.config = { ...loadConfig(), ...options };
   }
   /**
    * Reads a template, checking the local .avenxtemplates/ folder first.
@@ -183,19 +183,19 @@ class AvenxCLI {
     }
 
     // Create initial main.app.js
-    const mainAppPath = path.join(this.baseDir, 'src/main.app.js');
+    const mainAppPath = path.join(this.baseDir, this.config.srcDir, 'main.app.js');
     if (!fs.existsSync(mainAppPath)) {
       fs.writeFileSync(
         mainAppPath,
         "import { AvenxApp } from 'avenx-core/runtime';\n\nconst app = new AvenxApp({ target: '#app' });\n",
       );
-      console.log('  Created: src/main.app.js');
+      console.log(`  Created: ${this.config.srcDir}/main.app.js`);
     }
     // Create initial .gitignore
     const gitignorePath = path.join(this.baseDir, '.gitignore');
 
     if (!fs.existsSync(gitignorePath)) {
-      fs.writeFileSync(gitignorePath, 'node_modules/\ndist/\n.DS_Store\n');
+      fs.writeFileSync(gitignorePath, `node_modules/\n${this.config.distDir}/\n.DS_Store\n`);
       console.log('  Created: .gitignore');
     }
     console.log('✅ Project initialized successfully!');
@@ -214,7 +214,7 @@ class AvenxCLI {
     const { capitalizedName: baseName, folderFileName: lowerName } = parseName(name);
     const capitalizedName = baseName + 'Bridge';
 
-    const globalDir = path.join(this.baseDir, 'src/global');
+    const globalDir = path.join(this.baseDir, this.config.srcDir, 'global');
     if (!fs.existsSync(globalDir)) {
       fs.mkdirSync(globalDir, { recursive: true });
     }
@@ -229,7 +229,7 @@ class AvenxCLI {
 
     fs.writeFileSync(bridgePath, template.replace(/{{ name }}/g, capitalizedName));
 
-    console.log(`✅ Bridge '${capitalizedName}' generated at src/global/${lowerName}.bridge.js`);
+    console.log(`✅ Bridge '${capitalizedName}' generated at ${this.config.srcDir}/global/${lowerName}.bridge.js`);
     console.log(`ℹ️ It will be automatically registered as '${capitalizedName}' on the next build.`);
   }
 
@@ -246,7 +246,7 @@ class AvenxCLI {
     const { capitalizedName: baseName, folderFileName: lowerName } = parseName(name);
     const capitalizedName = baseName + 'Guard';
 
-    const guardDir = path.join(this.baseDir, 'src/guards');
+    const guardDir = path.join(this.baseDir, this.config.srcDir, 'guards');
     if (!fs.existsSync(guardDir)) {
       fs.mkdirSync(guardDir, { recursive: true });
     }
@@ -261,7 +261,7 @@ class AvenxCLI {
 
     fs.writeFileSync(guardPath, template.replace(/{{ name }}/g, capitalizedName));
 
-    console.log(`✅ Guard '${capitalizedName}' generated at src/guards/${lowerName}.guard.js`);
+    console.log(`✅ Guard '${capitalizedName}' generated at ${this.config.srcDir}/guards/${lowerName}.guard.js`);
     console.log(`ℹ️ It can be used in your route configurations.`);
   }
 
@@ -277,7 +277,7 @@ class AvenxCLI {
 
     const { capitalizedName, folderFileName: lowerName } = parseName(name);
 
-    const pageDir = path.join(this.baseDir, 'src/pages');
+    const pageDir = path.join(this.baseDir, this.config.srcDir, 'pages');
     if (!fs.existsSync(pageDir)) {
       fs.mkdirSync(pageDir, { recursive: true });
     }
@@ -295,7 +295,7 @@ class AvenxCLI {
     fs.writeFileSync(jsPath, jsTemplate.replace(/{{ name }}/g, capitalizedName));
     fs.writeFileSync(cssPath, cssTemplate);
 
-    console.log(`✅ Page '${capitalizedName}' generated at src/pages/${lowerName}.page.js`);
+    console.log(`✅ Page '${capitalizedName}' generated at ${this.config.srcDir}/pages/${lowerName}.page.js`);
     console.log(`ℹ️ It will be automatically registered and routed if you update src/main.app.js.`);
   }
 
@@ -311,7 +311,7 @@ class AvenxCLI {
 
     const { capitalizedName, folderFileName: lowerName } = parseName(name);
 
-    const compDir = path.join(this.baseDir, 'src/components', lowerName);
+    const compDir = path.join(this.baseDir, this.config.srcDir, 'components', lowerName);
 
     if (this.abortIfGeneratedPathExists('Component', lowerName, [compDir])) {
       return;
@@ -328,7 +328,7 @@ class AvenxCLI {
     );
     fs.writeFileSync(path.join(compDir, `${lowerName}.component.css`), cssTemplate);
 
-    console.log(`✅ Component '${lowerName}' generated at src/components/${lowerName}/`);
+    console.log(`✅ Component '${lowerName}' generated at ${this.config.srcDir}/components/${lowerName}/`);
     this.registerInMainApp(capitalizedName, lowerName);
   }
 
@@ -338,7 +338,7 @@ class AvenxCLI {
    * @param folderName
    */
   registerInMainApp(className, folderName) {
-    const mainPath = path.join(this.baseDir, 'src/main.app.js');
+    const mainPath = path.join(this.baseDir, this.config.srcDir, 'main.app.js');
     if (!fs.existsSync(mainPath)) return;
 
     const content = fs.readFileSync(mainPath, 'utf-8');
@@ -380,14 +380,14 @@ class AvenxCLI {
     }
 
     fs.writeFileSync(mainPath, lines.join('\n'));
-    console.log(`✅ Component '${className}' registered in src/main.app.js`);
+    console.log(`✅ Component '${className}' registered in ${this.config.srcDir}/main.app.js`);
   }
 
   /**
    * Runs the compiler build.
    */
   buildProject() {
-    new AvenxCompiler().build();
+    new AvenxCompiler(this.config).build();
   }
 
   /**
@@ -403,7 +403,7 @@ class AvenxCLI {
       originalWarn(...messages);
     };
 
-    const compiler = new AvenxCompiler();
+    const compiler = new AvenxCompiler(this.config);
 
     compiler.processComponents();
     compiler.processPages();
@@ -507,7 +507,7 @@ class AvenxCLI {
     server.listen(port, () => {
       const url = `http://localhost:${port}`;
       console.log(`\n🚀 Dev-Server running at ${url}`);
-      console.log(`👀 Watching for changes in src/...\n`);
+      console.log(`👀 Watching for changes in ${this.config.srcDir}/...\n`);
       this.openBrowser(url);
     });
   }
@@ -517,7 +517,7 @@ class AvenxCLI {
    */
   watchProject() {
     let timeout;
-    const srcPath = path.join(this.baseDir, 'src');
+    const srcPath = path.join(this.baseDir, this.config.srcDir);
 
     if (!fs.existsSync(srcPath)) return;
 
@@ -555,11 +555,10 @@ class AvenxCLI {
     return `<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Avenx App</title>
     <link rel="stylesheet" href="${this.config.distDir}/bundle.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Avenx App</title>
-  <link rel="stylesheet" href="dist/bundle.css">
 </head>
 <body>
     <div id="app"></div>

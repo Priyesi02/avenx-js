@@ -40,6 +40,8 @@ Every contribution — whether code, documentation, or ideas — helps move the 
 - [@Prasiddhi26](https://github.com/Prasiddhi26)
 - [@TrooperZ](https://github.com/TrooperZ)
 - [@aaditya755](https://github.com/aaditya755)
+- [@ychampion](https://github.com/ychampion)
+- [@luvkumar404](https://github.com/luvkumar404)
 
 ---
 

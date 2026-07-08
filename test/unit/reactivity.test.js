@@ -293,6 +293,33 @@ function testBuiltinsAreNotProxied() {
   console.log('  ✅ Built-ins are not proxied tests passed!');
 }
 
+/**
+ * Verifies that assigning a reactive proxy to another state property doesn't create a double proxy layer.
+ */
+function testDoubleWrappingPrevention() {
+  console.log('🧪 Testing prevention of double wrapping for reactive proxies...');
+  
+  let changeCount = 0;
+  const state = new StateFactory().create({
+    child1: { a: 1 },
+    child2: { b: 2 }
+  }, {
+    onChange: () => changeCount++
+  });
+
+  state.child1 = state.child2;
+  
+  assert.strictEqual(state.child1, state.child2, 'The proxies should be identical (no double wrapping)');
+  
+  changeCount = 0;
+  
+  state.child1.b = 3;
+  assert.strictEqual(changeCount, 1, 'Mutating the assigned proxy should trigger only 1 update, not 2');
+  assert.strictEqual(state.child2.b, 3, 'Mutation should reflect in the original proxy');
+
+  console.log('  ✅ Double wrapping prevention tests passed!');
+}
+
 (async () => {
   try {
     testIsReactiveTarget();
@@ -303,6 +330,7 @@ function testBuiltinsAreNotProxied() {
     testSymbolKeysDoNotTriggerUpdates();
     await testBridgeDeepReactivity();
     testBuiltinsAreNotProxied();
+    testDoubleWrappingPrevention();
     console.log('✅ All reactivity tests passed!');
   } catch (error) {
     console.error('❌ Reactivity tests failed!');

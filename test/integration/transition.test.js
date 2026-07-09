@@ -6,6 +6,7 @@ const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
 const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const waitForRaf = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
 (async () => {
   try {
@@ -22,7 +23,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     assert.ok(el.classList.contains('fade-enter'), 'Should initially have enter class');
     assert.ok(el.classList.contains('fade-enter-active'), 'Should initially have enter-active class');
 
-    await sleep(10); // Wait for requestAnimationFrame ticks
+    await waitForRaf();
     assert.ok(!el.classList.contains('fade-enter'), 'Should remove enter class after raf');
     assert.ok(el.classList.contains('fade-enter-to'), 'Should add enter-to class after raf');
 
@@ -39,7 +40,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     assert.ok(el.classList.contains('fade-leave-active'), 'Should initially have leave-active class');
     assert.ok(el._isLeaving, 'Should set _isLeaving to true');
 
-    await sleep(10); // Wait for requestAnimationFrame ticks
+    await waitForRaf();
     assert.ok(!el.classList.contains('fade-leave'), 'Should remove leave class after raf');
     assert.ok(el.classList.contains('fade-leave-to'), 'Should add leave-to class after raf');
 
@@ -88,7 +89,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     app.register('ShowComponent', ShowComponent);
 
     app.mount('ShowComponent', '#app');
-    await sleep(10);
+    await waitForRaf();
     
     const targetDiv = appContainer.childNodes[0];
     assert.ok(targetDiv, 'Component should be mounted');
@@ -104,7 +105,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     assert.ok(targetDiv.classList.contains('fade-leave-active'), 'Should start leave transition');
     
     // Wait for transition to end (mock duration is 0, so runs after rafs)
-    await sleep(20);
+    await waitForRaf();
     assert.strictEqual(targetDiv.style.display, 'none', 'Element should be hidden after leave transition finishes');
 
     // 4. Test page/routing transitions

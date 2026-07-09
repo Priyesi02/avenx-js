@@ -28,5 +28,5 @@ Internal utility class providing character replacement mappings to prevent code 
 ```javascript
 const escaper = new HtmlEscaper();
 escaper.escape('<h1>Text</h1>');
-// Returns: <h1>Text</h1>
+// Returns: &lt;h1&gt;Text&lt;/h1&gt;
 ```

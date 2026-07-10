@@ -36,3 +36,17 @@ Compiles all components, styles, pages, and bridges into `dist/bundle.js` and `d
 ### 4. `avenx serve [port]`
 
 Starts a local hot-reloading development server (default port: 3000). It watches the `src/` directory for changes, automatically triggers a rebuild, and sends a live reload event to connected browser instances via a Server-Sent Events (SSE) bridge.
+
+### 5. `avenx check` (alias: `lint`)
+
+Validates your project's templates without triggering a full production build. 
+
+#### Description
+The `check` command parses all local templates to catch potential runtime errors early. It analyzes the template structure to detect:
+* Undeclared or missing variables
+* Incorrectly referenced computed properties
+* Unregistered or malformed actions
+
+#### Exit Codes
+* **`0`**: Success. All templates successfully parsed with no validation errors or warnings.
+* **`1`**: Validation Failure. The command will exit with code 1 if any template warnings or errors are detected, making it ideal for CI/CD linting pipelines.

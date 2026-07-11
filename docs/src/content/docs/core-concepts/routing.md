@@ -67,6 +67,8 @@ export default class AuthGuard extends AvenxGuard {
 }
 ```
 
+:::caution
+Redirect paths returned from `canActivate` must start with `#`. `AvenxRouter.navigate` only applies the configured `prefix` and namespace settings to hash paths — a path without the `#` prefix bypasses this resolution and can break navigation in apps served with a custom `prefix`.
 :::warning
 Redirect paths must start with a `#` prefix to ensure router prefix and namespace settings are respected.
 :::

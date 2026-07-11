@@ -59,6 +59,10 @@ This lifecycle method is executed prior to entering a route.
   * `false`: Cancels the navigation.
   * `string`: Redirects the user to the specified path/hash (e.g., `'#/login'`).
 
+:::caution
+Redirect paths returned from `canActivate` must start with `#`. `AvenxRouter.navigate` only applies the configured `prefix` and namespace settings to hash paths — a path without the `#` prefix bypasses this resolution and can break navigation in apps served with a custom `prefix`.
+:::
+
 #### Sample Guard Implementation
 
 ```javascript

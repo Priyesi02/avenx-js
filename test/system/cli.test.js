@@ -337,6 +337,32 @@ function runTest() {
     );
 
     console.log('✅ Subdirectory command execution tests passed!');
+
+    console.log('🧪 Testing avenx clean...');
+
+    // Dist directory should exist before clean (since we ran compile/build in earlier tests)
+    const distPath = path.join(TEST_DIR, 'dist');
+    assert.ok(fs.existsSync(distPath), 'dist directory should exist before clean');
+
+    // Run avenx clean
+    const cleanOutput = execSync(`node ${BIN_PATH} clean`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+
+    assert.ok(!fs.existsSync(distPath), 'dist directory should be deleted after clean');
+    assert.match(cleanOutput, /🧹 Cleaning build output directory/, 'should print cleaning message');
+    assert.match(cleanOutput, /✅ Clean complete/, 'should print clean complete message');
+
+    // Run clean again when dist directory does not exist
+    const cleanAgainOutput = execSync(`node ${BIN_PATH} clean`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+
+    assert.match(cleanAgainOutput, /does not exist\. Nothing to clean/, 'should handle non-existent directory');
+
+    console.log('✅ Clean command tests passed!');
   } catch (error) {
     console.error('❌ Test failed!');
     console.error(error);

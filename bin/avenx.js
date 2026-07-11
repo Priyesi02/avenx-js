@@ -17,7 +17,7 @@ const [, , command, ...args] = process.argv;
 
 const MIN_NODE_VERSION = [18, 0, 0];
 const current = process.versions.node
-  .split(".")
+  .split('.')
   .map(Number);
 
 function compareVersions(current, required) {
@@ -30,7 +30,7 @@ function compareVersions(current, required) {
 
 if (!compareVersions(current, MIN_NODE_VERSION)) {
   console.error(
-    `Avenx requires Node.js ${MIN_NODE_VERSION.join(".")} or later.\n` +
+    `Avenx requires Node.js ${MIN_NODE_VERSION.join('.')} or later.\n` +
     `Current version: ${process.versions.node}`
   );
   process.exit(1);

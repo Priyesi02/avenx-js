@@ -149,6 +149,9 @@ class AvenxCLI {
       case 'b':
         this.buildProject();
         break;
+      case 'clean':
+        this.cleanProject();
+        break;
       case 'check':
       case 'lint':
         this.checkProject(args);
@@ -455,6 +458,20 @@ class AvenxCLI {
   }
 
   /**
+   * Cleans the project by deleting the build output directory.
+   */
+  cleanProject() {
+    const distDir = path.join(this.baseDir, this.config.distDir);
+    if (fs.existsSync(distDir)) {
+      console.log(`🧹 Cleaning build output directory: ${this.config.distDir}...`);
+      fs.rmSync(distDir, { recursive: true, force: true });
+      console.log('✅ Clean complete.');
+    } else {
+      console.log(`🧹 Build output directory ${this.config.distDir} does not exist. Nothing to clean.`);
+    }
+  }
+
+  /**
    *
    * @param args
    */
@@ -658,6 +675,7 @@ Commands:
   generate bridge <name>    Generate a new shared reactive bridge
   generate guard <name>     Generate a new route guard
   build (b)                 Build the project using configured output directory
+  clean                     Clear build output directory
   check (lint)              Validate templates without building
   serve [port]              Start dev server with hot-reload (default: 3000)
   help                      Show this help message

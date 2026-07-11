@@ -182,8 +182,8 @@ class AvenxCLI {
 
     dirs.forEach((dir) => {
       const fullPath = path.join(this.baseDir, dir);
-      if (!fs.existsSync(fullPath)) {
-        fs.mkdirSync(fullPath, { recursive: true });
+      const created = fs.mkdirSync(fullPath, { recursive: true });
+      if (created) {
         console.log(`  Created: ${dir}`);
       }
     });

@@ -51,8 +51,18 @@ function runTest() {
   try {
     setup();
 
-    // Run the init command in the test directory
-    execSync(`node ${BIN_PATH} init`, { cwd: TEST_DIR });
+    // Run the init command in the test directory and capture output
+    const init1Output = execSync(`node ${BIN_PATH} init`, { cwd: TEST_DIR, encoding: 'utf8' });
+
+    // Assert that the first run logs the Created: lines
+    assert.match(init1Output, /Created: src\/components/, 'first init run should log folder creation');
+    assert.match(init1Output, /Created: \.vscode\/jsconfig\.json/, 'first init run should log file creation');
+
+    // Run the init command again in the test directory
+    const init2Output = execSync(`node ${BIN_PATH} init`, { cwd: TEST_DIR, encoding: 'utf8' });
+
+    // Assert that the second run does not log any directory or file creation lines
+    assert.ok(!init2Output.includes('Created:'), 'second init run should not log any creation messages');
 
     // Assertions
     const expectedPaths = [

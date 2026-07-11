@@ -51,6 +51,7 @@ Every contribution — whether code, documentation, or ideas — helps move the 
 24. [@m-melaku](https://github.com/m-melaku)
 25. [@Zyam-1](https://github.com/Zyam-1)
 26. [@raj921](https://github.com/raj921)
+27. [@Harshitbro-ctrlv](https://github.com/Harshitbro-ctrlv)
 
 ---
 

@@ -61,6 +61,24 @@ const btn = new ButtonComponent();
 btn.mount('#button-container');
 ```
 
+### `setProps(newProps)`
+
+Updates the component's reactive `props` to match `newProps`. New or changed properties are applied, and properties omitted from `newProps` are removed. These reactive changes trigger the update scheduler, which queues a DOM patch with the component's updated props.
+
+| Param      | Type     | Description                              |
+| ---------- | -------- | ---------------------------------------- |
+| `newProps` | `object` | The complete set of props to apply.      |
+
+```javascript
+const btn = new ButtonComponent();
+btn.mount('#button-container');
+
+btn.setProps({
+  label: 'Saving...',
+  disabled: true,
+});
+```
+
 ### `unmount()`
 
 Cleans up event listeners and empties the mounted container.

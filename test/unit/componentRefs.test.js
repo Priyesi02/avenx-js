@@ -1,6 +1,6 @@
 import assert from 'assert';
+import '../helpers/register-happy-dom.js';
 import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
-import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 /**
  * Tests that elements marked with data-ax-ref are exposed through $refs.
@@ -8,28 +8,17 @@ import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mo
 function testComponentRefCollection() {
   console.log('🧪 Testing data-ax-ref collection...');
 
-  setupDOMMock();
+  const component = new AvenxComponent({}, {}, {}, '<input data-ax-ref="myInput"></input>');
+  const root = document.createElement('div');
 
-  try {
-    const component = new AvenxComponent();
+  component.__setMountTarget(root);
+  component.runUpdate();
 
-    const root = new MockDOMElement('div');
-    const input = new MockDOMElement('input');
+  const input = root.childNodes[0];
+  assert.ok(input, 'Input element should be created');
+  assert.strictEqual(component.$refs.myInput, input, '$refs.myInput should point to the referenced DOM element.');
 
-    input.setAttribute('data-ax-ref', 'myInput');
-
-    component.__setMountTarget(root);
-
-    root.appendChild(input);
-
-    component.runUpdate();
-
-    assert.strictEqual(component.$refs.myInput, input, '$refs.myInput should point to the referenced DOM element.');
-
-    console.log('  ✅ data-ax-ref element is available through $refs.');
-  } finally {
-    teardownDOMMock();
-  }
+  console.log('  ✅ data-ax-ref element is available through $refs.');
 }
 
 /**
@@ -38,43 +27,31 @@ function testComponentRefCollection() {
 function testComponentRefScoping() {
   console.log('🧪 Testing data-ax-ref component scoping...');
 
-  setupDOMMock();
+  const template = `
+    <div>
+      <input data-ax-ref="parentInput"></input>
+      <div data-avenx-comp="child-component">
+        <input data-ax-ref="childInput"></input>
+      </div>
+    </div>
+  `;
+  const component = new AvenxComponent({}, {}, {}, template);
+  const root = document.createElement('div');
 
-  try {
-    const component = new AvenxComponent();
+  component.__setMountTarget(root);
+  component.runUpdate();
 
-    const root = new MockDOMElement('div');
+  const outerDiv = root.childNodes[0];
+  const parentInput = outerDiv.querySelector('[data-ax-ref="parentInput"]');
 
-    const parentInput = new MockDOMElement('input');
-    parentInput.setAttribute('data-ax-ref', 'parentInput');
+  assert.strictEqual(component.$refs.parentInput, parentInput, 'The parent component should collect its own ref.');
+  assert.strictEqual(
+    component.$refs.childInput,
+    undefined,
+    'The parent component should not collect refs inside nested components.',
+  );
 
-    const childComponent = new MockDOMElement('div');
-    childComponent.setAttribute('data-avenx-comp', 'child-component');
-
-    const childInput = new MockDOMElement('input');
-    childInput.setAttribute('data-ax-ref', 'childInput');
-
-    childComponent.appendChild(childInput);
-
-    component.__setMountTarget(root);
-
-    root.appendChild(parentInput);
-    root.appendChild(childComponent);
-
-    component.runUpdate();
-
-    assert.strictEqual(component.$refs.parentInput, parentInput, 'The parent component should collect its own ref.');
-
-    assert.strictEqual(
-      component.$refs.childInput,
-      undefined,
-      'The parent component should not collect refs inside nested components.',
-    );
-
-    console.log('  ✅ Refs remain scoped to the current component boundary.');
-  } finally {
-    teardownDOMMock();
-  }
+  console.log('  ✅ Refs remain scoped to the current component boundary.');
 }
 
 /**
@@ -83,32 +60,20 @@ function testComponentRefScoping() {
 function testComponentRefCleanup() {
   console.log('🧪 Testing data-ax-ref cleanup...');
 
-  setupDOMMock();
+  const component = new AvenxComponent({}, {}, {}, '<input data-ax-ref="myInput"></input>');
+  const root = document.createElement('div');
 
-  try {
-    const component = new AvenxComponent();
+  component.__setMountTarget(root);
+  component.runUpdate();
 
-    const root = new MockDOMElement('div');
-    const input = new MockDOMElement('input');
+  const input = root.childNodes[0];
+  assert.strictEqual(component.$refs.myInput, input, '$refs.myInput should exist before unmount.');
 
-    input.setAttribute('data-ax-ref', 'myInput');
+  component.unmount();
 
-    component.__setMountTarget(root);
+  assert.deepStrictEqual(component.$refs, {}, '$refs should be cleared after component unmount.');
 
-    root.appendChild(input);
-
-    component.runUpdate();
-
-    assert.strictEqual(component.$refs.myInput, input, '$refs.myInput should exist before unmount.');
-
-    component.unmount();
-
-    assert.deepStrictEqual(component.$refs, {}, '$refs should be cleared after component unmount.');
-
-    console.log('  ✅ $refs are cleared after unmount.');
-  } finally {
-    teardownDOMMock();
-  }
+  console.log('  ✅ $refs are cleared after unmount.');
 }
 
 function runTests() {
@@ -126,3 +91,4 @@ function runTests() {
 }
 
 runTests();
+

@@ -6,8 +6,8 @@ const window = new Window({
     disableJavaScriptFileLoading: true,
     disableJavaScriptEvaluation: false,
     disableCSSFileLoading: true,
-    disableIframePageLoading: true
-  }
+    disableIframePageLoading: true,
+  },
 });
 
 const keys = [
@@ -27,7 +27,7 @@ const keys = [
   'requestAnimationFrame',
   'cancelAnimationFrame',
   'getComputedStyle',
-  'location'
+  'location',
 ];
 
 for (const key of keys) {

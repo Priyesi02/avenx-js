@@ -23,9 +23,7 @@ try {
       querySelector: (selector) => {
         const match = selector.match(/\[data-avenx-style="([^"]+)"\]/);
         if (match) {
-          return headChildren.find(
-            (el) => el._attrs && el._attrs['data-avenx-style'] === match[1],
-          ) || null;
+          return headChildren.find((el) => el._attrs && el._attrs['data-avenx-style'] === match[1]) || null;
         }
         return null;
       },
@@ -160,9 +158,7 @@ try {
   instance3.mount(target3);
 
   // Count <style> elements with data-avenx-style matching this component
-  const styleElements = headChildren.filter(
-    (el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledButton',
-  );
+  const styleElements = headChildren.filter((el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledButton');
 
   assert.strictEqual(
     styleElements.length,
@@ -243,11 +239,7 @@ try {
     (el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledButton',
   );
 
-  assert.strictEqual(
-    styleElementsAfterRemount.length,
-    1,
-    'A new <style> element should be created after remounting',
-  );
+  assert.strictEqual(styleElementsAfterRemount.length, 1, 'A new <style> element should be created after remounting');
 
   instance4.unmount();
 
@@ -272,12 +264,8 @@ try {
   const cardInstance = new StyledCard();
   cardInstance.mount(target6);
 
-  const buttonStyles = headChildren.filter(
-    (el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledButton',
-  );
-  const cardStyles = headChildren.filter(
-    (el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledCard',
-  );
+  const buttonStyles = headChildren.filter((el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledButton');
+  const cardStyles = headChildren.filter((el) => el._attrs['data-avenx-style'] === 'avenx-style-StyledCard');
 
   assert.strictEqual(buttonStyles.length, 1, 'One style element for StyledButton');
   assert.strictEqual(cardStyles.length, 1, 'One style element for StyledCard');

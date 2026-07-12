@@ -163,7 +163,6 @@ class MockDOMElement {
    * - universal selector (*)
    * - tag selectors
    * - attribute presence selectors ([attribute])
-   *
    * @param {string} selector
    * @returns {MockDOMElement[]}
    */
@@ -206,17 +205,13 @@ class MockDOMElement {
   }
 
   assertListenerWasAdded(event) {
-    const found = this.recordedCalls.some(
-      (call) => call.method === 'addEventListener' && call.event === event,
-    );
+    const found = this.recordedCalls.some((call) => call.method === 'addEventListener' && call.event === event);
 
     assert.ok(found, `Erwartung fehlgeschlagen: addEventListener wurde nicht für "${event}" aufgerufen.`);
   }
 
   assertListenerWasRemoved(event) {
-    const found = this.recordedCalls.some(
-      (call) => call.method === 'removeEventListener' && call.event === event,
-    );
+    const found = this.recordedCalls.some((call) => call.method === 'removeEventListener' && call.event === event);
 
     assert.ok(found, `Erwartung fehlgeschlagen: removeEventListener wurde nicht für "${event}" aufgerufen.`);
   }

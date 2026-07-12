@@ -24,11 +24,7 @@ function testComponentRefCollection() {
 
     component.runUpdate();
 
-    assert.strictEqual(
-      component.$refs.myInput,
-      input,
-      '$refs.myInput should point to the referenced DOM element.',
-    );
+    assert.strictEqual(component.$refs.myInput, input, '$refs.myInput should point to the referenced DOM element.');
 
     console.log('  ✅ data-ax-ref element is available through $refs.');
   } finally {
@@ -67,11 +63,7 @@ function testComponentRefScoping() {
 
     component.runUpdate();
 
-    assert.strictEqual(
-      component.$refs.parentInput,
-      parentInput,
-      'The parent component should collect its own ref.',
-    );
+    assert.strictEqual(component.$refs.parentInput, parentInput, 'The parent component should collect its own ref.');
 
     assert.strictEqual(
       component.$refs.childInput,
@@ -107,19 +99,11 @@ function testComponentRefCleanup() {
 
     component.runUpdate();
 
-    assert.strictEqual(
-      component.$refs.myInput,
-      input,
-      '$refs.myInput should exist before unmount.',
-    );
+    assert.strictEqual(component.$refs.myInput, input, '$refs.myInput should exist before unmount.');
 
     component.unmount();
 
-    assert.deepStrictEqual(
-      component.$refs,
-      {},
-      '$refs should be cleared after component unmount.',
-    );
+    assert.deepStrictEqual(component.$refs, {}, '$refs should be cleared after component unmount.');
 
     console.log('  ✅ $refs are cleared after unmount.');
   } finally {

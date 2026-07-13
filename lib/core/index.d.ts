@@ -22,16 +22,22 @@ export class AvenxGuard {
  * Base class for all Avenx components.
  * Manages state, reactivity, rendering, and lifecycle.
  */
-export class AvenxComponent {
+export class AvenxComponent<S extends Record<string, any> = Record<string, any>> {
     /**
      * The reactive state proxy of the component.
+     * When a generic state shape `S` is provided, this property is fully typed.
      */
-    state: Record<string, any>;
+    state: S;
 
     /**
      * The reactive props of the component.
      */
     props: Record<string, any>;
+
+    /**
+     * The component instance that mounted this component, or null for root components.
+     */
+    readonly $parent: AvenxComponent<any> | null;
 
     /**
      * The active route details.
@@ -57,7 +63,7 @@ export class AvenxComponent {
      * @param props Input properties passed down from parent.
      */
     constructor(
-        initialState?: Record<string, any>,
+        initialState?: S,
         computed?: Record<string, string>,
         bridges?: Record<string, any>,
         template?: string,
@@ -143,13 +149,19 @@ export class AvenxComponent {
      * @protected
      */
     _getBridges(): Record<string, any>;
+
+    /**
+     * Retrieves the transcluded groups for this component.
+     * @protected
+     */
+    _getTranscludedGroups(): Record<string, any>;
 }
 
 /**
  * AvenxPage is a specialized component that can host child components.
  * It automatically mounts child components defined in its template via [data-avenx-comp].
  */
-export class AvenxPage extends AvenxComponent {
+export class AvenxPage<S extends Record<string, any> = Record<string, any>> extends AvenxComponent<S> {
     /**
      * @param initialState Initial page state.
      * @param computed Page computed properties.
@@ -159,12 +171,22 @@ export class AvenxPage extends AvenxComponent {
      * @param componentRegistry Component class registry map.
      */
     constructor(
-        initialState?: Record<string, any>,
+        initialState?: S,
         computed?: Record<string, string>,
         bridges?: Record<string, any>,
         template?: string,
         methods?: Record<string, string | Function>,
         componentRegistry?: Map<string, typeof AvenxComponent>,
+        props?: Record<string, any>
+    );
+}
+
+/**
+ * Built-in component for high-performance virtualized list rendering.
+ */
+export class VirtualList extends AvenxComponent<any> {
+    constructor(
+        bridges?: Record<string, any>,
         props?: Record<string, any>
     );
 }
@@ -187,6 +209,42 @@ export interface AvenxRouterOptions {
      * The target hash path to redirect to if a route guard times out (e.g. '#/').
      */
     guardTimeoutRedirect?: string;
+
+    /**
+     * A string prepended to every resolved route title.
+     */
+    titlePrefix?: string;
+
+    /**
+     * A string appended to every resolved route title (e.g. ' — MyApp').
+     */
+    titleSuffix?: string;
+}
+
+/**
+ * Definition object for a single route entry.
+ */
+export interface AvenxRouteDefinition {
+    /**
+     * The registered page name to mount for this route.
+     */
+    page: string;
+
+    /**
+     * Optional guards to evaluate before activating this route.
+     */
+    guards?: Array<typeof AvenxGuard | AvenxGuard>;
+
+    /**
+     * Optional page title. Can be a static string or a function receiving
+     * the parsed route params and returning a string.
+     */
+    title?: string | ((params: Record<string, any>) => string);
+
+    /**
+     * Optional transition name for page enter/leave animations.
+     */
+    transition?: string;
 }
 
 /**
@@ -202,7 +260,7 @@ export class AvenxRouter {
     /**
      * Map of route pattern strings to Page names or route config definitions.
      */
-    routes: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>;
+    routes: Record<string, string | AvenxRouteDefinition>;
 
     /**
      * Info about the currently loaded route.
@@ -216,7 +274,7 @@ export class AvenxRouter {
      */
     constructor(
         app: AvenxApp,
-        routes?: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>,
+        routes?: Record<string, string | AvenxRouteDefinition>,
         options?: AvenxRouterOptions
     );
 
@@ -313,7 +371,7 @@ export class AvenxApp {
      * @param options Router options.
      */
     initRouter(
-        routes: Record<string, string | { page: string; guards?: Array<typeof AvenxGuard | AvenxGuard> }>,
+        routes: Record<string, string | AvenxRouteDefinition>,
         options?: AvenxRouterOptions
     ): AvenxRouter;
 }
@@ -330,7 +388,7 @@ export class AvenxBridge {
  */
 export class StateFactory {
     constructor(handlerFactoryClass?: typeof ProxyHandlerFactory);
-    create(initialState?: Record<string, any>, options?: Record<string, any>): Record<string, any>;
+    create<T extends Record<string, any> = Record<string, any>>(initialState?: T, options?: Record<string, any>): T;
 }
 
 /**
@@ -406,7 +464,7 @@ export class TemplateRenderer {
  * Triggers initial mounting states.
  */
 export class LifecycleManager {
-    mount(component: AvenxComponent, target: Element | string): void;
+    mount(component: AvenxComponent<any>, target: Element | string): void;
 }
 
 export class ComputedRegistry {
@@ -527,11 +585,10 @@ export class AvenxSandbox {
         props?: Record<string, any>,
         container?: any
     ): {
-        instance: AvenxComponent;
+        instance: AvenxComponent<any>;
         container: any;
         readonly html: string;
         update(): void;
         trigger(selectorOrElement: any, eventName: string, eventData?: Record<string, any>): void;
     };
 }
-

@@ -1,5 +1,5 @@
-const { performance } = require('perf_hooks');
-const StyleProcessor = require('../lib/compiler/StyleProcessor');
+import { performance } from 'perf_hooks';
+import StyleProcessor from '../lib/compiler/StyleProcessor.js';
 
 /**
  *

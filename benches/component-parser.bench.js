@@ -1,7 +1,7 @@
-const fs = require('fs');
-const { performance } = require('perf_hooks');
-const StyleProcessor = require('../lib/compiler/StyleProcessor');
-const ComponentParser = require('../lib/compiler/ComponentParser');
+import fs from 'fs';
+import { performance } from 'perf_hooks';
+import StyleProcessor from '../lib/compiler/StyleProcessor.js';
+import ComponentParser from '../lib/compiler/ComponentParser.js';
 
 // Mock data
 const componentJs = `<state count="0" />

@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { DomPatcher } = require('../../lib/core/renderer/domPatch');
-const { ListManager } = require('../../lib/core/renderer/listManager');
+import assert from 'assert';
+import { DomPatcher } from '../../lib/core/renderer/domPatch.js';
+import { ListManager } from '../../lib/core/renderer/listManager.js';
 
 // ==========================================
 // 1. Lightweight Mock DOM & HTML Parser

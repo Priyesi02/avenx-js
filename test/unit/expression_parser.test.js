@@ -1,5 +1,5 @@
-const assert = require('assert');
-const ExpressionParser = require('../../lib/compiler/expressionParser');
+import assert from 'assert';
+import ExpressionParser from '../../lib/compiler/expressionParser.js';
 
 try {
   console.log('🧪 Testing ExpressionParser upgrades...');

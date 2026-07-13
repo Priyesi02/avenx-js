@@ -1,7 +1,7 @@
-const assert = require('assert');
-const { AvenxApp } = require('../../lib/core/runtime/AvenxApp');
-const { AvenxGuard } = require('../../lib/core/runtime/AvenxGuard');
-const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
+import assert from 'assert';
+import { AvenxApp } from '../../lib/core/runtime/AvenxApp.js';
+import { AvenxGuard } from '../../lib/core/runtime/AvenxGuard.js';
+import { AvenxPage } from '../../lib/core/runtime/AvenxPage.js';
 
 (async () => {
   try {
@@ -121,6 +121,8 @@ const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
     }
 
     app.initRouter({
+      '': 'TestPage',
+      '#': 'TestPage',
       '#/': 'TestPage',
       '#/items*': 'TestPage',
       '#/user/:userId': {

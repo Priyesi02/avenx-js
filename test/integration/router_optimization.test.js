@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { AvenxApp } = require('../../lib/core/runtime/AvenxApp');
-const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
+import assert from 'assert';
+import { AvenxApp } from '../../lib/core/runtime/AvenxApp.js';
+import { AvenxPage } from '../../lib/core/runtime/AvenxPage.js';
 
 (async () => {
   try {

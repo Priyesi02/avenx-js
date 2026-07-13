@@ -1,4 +1,4 @@
-const assert = require('assert');
+import assert from 'assert';
 
 // Mock DOM environment for AvenxApp
 const mockElement = {
@@ -11,10 +11,10 @@ global.document = {
   querySelector: () => mockElement,
 };
 
-const { isReactiveTarget } = require('../../lib/core/reactive/proxyHandler');
-const { StateFactory } = require('../../lib/core/reactive/createState');
-const { AvenxApp } = require('../../lib/core/runtime/AvenxApp');
-const { AvenxWatcher } = require('../../lib/core/reactive/watcher');
+import { isReactiveTarget } from '../../lib/core/reactive/proxyHandler.js';
+import { StateFactory } from '../../lib/core/reactive/createState.js';
+import { AvenxApp } from '../../lib/core/runtime/AvenxApp.js';
+import { AvenxWatcher } from '../../lib/core/reactive/watcher.js';
 
 /**
  *
@@ -161,7 +161,7 @@ function testSymbolKeysAreNotTracked() {
     () => state[symbolKey],
     () => {
       watcherCount++;
-    }
+    },
   );
 
   assert.strictEqual(watcher.value, 'hidden');
@@ -191,14 +191,14 @@ function testSymbolKeysDoNotTriggerUpdates() {
       onChange: () => {
         changeCount++;
       },
-    }
+    },
   );
 
   new AvenxWatcher(
     () => state.visible,
     () => {
       watcherCount++;
-    }
+    },
   );
 
   state[symbolKey] = 'updated';
@@ -244,14 +244,14 @@ async function testBridgeDeepReactivity() {
     () => bridge.theme.colors.primary,
     () => {
       colorWatcherCount++;
-    }
+    },
   );
 
   new AvenxWatcher(
     () => bridge.theme.dark,
     () => {
       themeWatcherCount++;
-    }
+    },
   );
 
   // Mutating nested property triggers the color watcher
@@ -298,26 +298,75 @@ function testBuiltinsAreNotProxied() {
  */
 function testDoubleWrappingPrevention() {
   console.log('🧪 Testing prevention of double wrapping for reactive proxies...');
-  
+
   let changeCount = 0;
-  const state = new StateFactory().create({
-    child1: { a: 1 },
-    child2: { b: 2 }
-  }, {
-    onChange: () => changeCount++
-  });
+  const state = new StateFactory().create(
+    {
+      child1: { a: 1 },
+      child2: { b: 2 },
+    },
+    {
+      onChange: () => changeCount++,
+    },
+  );
 
   state.child1 = state.child2;
-  
+
   assert.strictEqual(state.child1, state.child2, 'The proxies should be identical (no double wrapping)');
-  
+
   changeCount = 0;
-  
+
   state.child1.b = 3;
   assert.strictEqual(changeCount, 1, 'Mutating the assigned proxy should trigger only 1 update, not 2');
   assert.strictEqual(state.child2.b, 3, 'Mutation should reflect in the original proxy');
 
   console.log('  ✅ Double wrapping prevention tests passed!');
+}
+
+/**
+ * Verifies that registerBridge throws an AvenxError when constructor throws an exception.
+ */
+function testBridgeConstructorFailure() {
+  console.log('🧪 Testing bridge constructor failure propagation...');
+
+  const app = new AvenxApp({ target: '#app' });
+
+  // 1. A class constructor that throws
+  class BadBridge {
+    constructor() {
+      throw new Error('Database initialization failed');
+    }
+  }
+
+  assert.throws(
+    () => {
+      app.registerBridge('BadBridge', BadBridge);
+    },
+    (err) => {
+      assert.strictEqual(err.name, 'AvenxError');
+      assert.ok(err.message.includes('[AVX_R17]'));
+      assert.ok(err.message.includes('Database initialization failed'));
+      return true;
+    },
+    'Should propagate the constructor failure as an AvenxError'
+  );
+
+  // 2. An arrow function (which is not a constructor and throws TypeError when used with new)
+  const arrowFuncBridge = () => {};
+  assert.throws(
+    () => {
+      app.registerBridge('ArrowBridge', arrowFuncBridge);
+    },
+    (err) => {
+      assert.strictEqual(err.name, 'AvenxError');
+      assert.ok(err.message.includes('[AVX_R17]'));
+      assert.ok(err.message.includes('is not a constructor'));
+      return true;
+    },
+    'Should throw AvenxError for arrow function bridge registrations'
+  );
+
+  console.log('  ✅ Bridge constructor failure propagation tests passed!');
 }
 
 (async () => {
@@ -331,6 +380,7 @@ function testDoubleWrappingPrevention() {
     await testBridgeDeepReactivity();
     testBuiltinsAreNotProxied();
     testDoubleWrappingPrevention();
+    testBridgeConstructorFailure();
     console.log('✅ All reactivity tests passed!');
   } catch (error) {
     console.error('❌ Reactivity tests failed!');

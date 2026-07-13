@@ -1,7 +1,7 @@
-const assert = require('assert');
-const { AvenxApp } = require('../../lib/core/runtime/AvenxApp');
-const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
-const { setupDOMMock, teardownDOMMock } = require('../helpers/dom-mock');
+import assert from 'assert';
+import { AvenxApp } from '../../lib/core/runtime/AvenxApp.js';
+import { AvenxPage } from '../../lib/core/runtime/AvenxPage.js';
+import { setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 // Define mock Page classes
 /**

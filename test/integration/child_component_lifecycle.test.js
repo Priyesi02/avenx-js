@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
+import assert from 'assert';
+import { AvenxPage } from '../../lib/core/runtime/AvenxPage.js';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
 
 // ==========================================
 // 1. Lightweight Mock DOM & HTML Parser
@@ -467,6 +467,7 @@ global.Node = {
 
     // 1. Initial Page Mount
     const parentPage = new ParentPage({}, componentRegistry);
+    assert.strictEqual(parentPage.$parent, null, 'Root component should not have a parent');
     parentPage.mount(testRootElement);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -476,6 +477,7 @@ global.Node = {
 
     const firstChildInstance = lastChildInstance;
     assert.ok(firstChildInstance, 'Child instance should be cached');
+    assert.strictEqual(firstChildInstance.$parent, parentPage, 'Child should reference its parent component');
 
     // Mutate child component local state directly to verify it persists
     firstChildInstance.state.childVal = 'mutatedLocalState';

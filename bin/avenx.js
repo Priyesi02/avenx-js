@@ -1,14 +1,37 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const http = require('http');
-const { exec } = require('child_process');
-const AvenxCompiler = require('../lib/compiler');
-const loadConfig = require('../lib/config');
-const packageJson = require('../package.json');
+import fs from 'fs';
+import path from 'path';
+import http from 'http';
+import { exec } from 'child_process';
+import { fileURLToPath } from 'url';
+import AvenxCompiler from '../lib/compiler.js';
+import loadConfig from '../lib/config.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+const findProjectRoot = loadConfig.findProjectRoot;
 
 const [, , command, ...args] = process.argv;
+
+const MIN_NODE_VERSION = [18, 0, 0];
+const current = process.versions.node.split('.').map(Number);
+
+function compareVersions(current, required) {
+  for (let i = 0; i < required.length; i++) {
+    if (current[i] > required[i]) return true;
+    if (current[i] < required[i]) return false;
+  }
+  return true;
+}
+
+if (!compareVersions(current, MIN_NODE_VERSION)) {
+  console.error(
+    `Avenx requires Node.js ${MIN_NODE_VERSION.join('.')} or later.\n` + `Current version: ${process.versions.node}`,
+  );
+  process.exit(1);
+}
 
 /**
  * Helper to parse input names into PascalCase and kebab-case.
@@ -36,9 +59,9 @@ class AvenxCLI {
    * Initializes the base directory and framework directory paths.
    */
   constructor(options = {}) {
-    this.baseDir = options.baseDir || process.cwd();
+    this.baseDir = options.baseDir || findProjectRoot(process.cwd());
     this.frameworkDir = path.join(__dirname, '..');
-    this.config = { ...loadConfig(), ...options };
+    this.config = { ...loadConfig(this.baseDir), ...options };
   }
   /**
    * Reads a template, checking the local .avenxtemplates/ folder first.
@@ -100,8 +123,10 @@ class AvenxCLI {
    * @param {string[]} args - Additional arguments for the command.
    */
   run(command, args) {
-    const type = args[0];
-    const name = args[1];
+    const dryRun = args.includes('--dry-run') || args.includes('-d');
+    const filteredArgs = args.filter((arg) => arg !== '--dry-run' && arg !== '-d');
+    const type = filteredArgs[0];
+    const name = filteredArgs[1];
 
     switch (command) {
       case 'init':
@@ -110,19 +135,37 @@ class AvenxCLI {
       case 'generate':
       case 'g':
         if (type === 'bridge') {
-          this.generateBridge(name);
+          this.generateBridge(name, dryRun);
         } else if (type === 'guard') {
-          this.generateGuard(name);
+          this.generateGuard(name, dryRun);
         } else if (type === 'page' || type === 'p') {
-          this.generatePage(name);
+          this.generatePage(name, dryRun);
         } else {
           // Default to component if only one arg or type is 'component'
-          this.generateComponent(name || type);
+          this.generateComponent(name || type, dryRun);
+        }
+        break;
+      case 'destroy':
+      case 'd':
+        if (type === 'bridge') {
+          this.destroyBridge(name, dryRun);
+        } else if (type === 'guard') {
+          this.destroyGuard(name, dryRun);
+        } else if (type === 'page' || type === 'p') {
+          this.destroyPage(name, dryRun);
+        } else if (type === 'component' || type === 'c') {
+          this.destroyComponent(name, dryRun);
+        } else {
+          // Default to component if only one arg or type is 'component'
+          this.destroyComponent(name || type, dryRun);
         }
         break;
       case 'build':
       case 'b':
         this.buildProject();
+        break;
+      case 'clean':
+        this.cleanProject();
         break;
       case 'check':
       case 'lint':
@@ -154,8 +197,8 @@ class AvenxCLI {
 
     dirs.forEach((dir) => {
       const fullPath = path.join(this.baseDir, dir);
-      if (!fs.existsSync(fullPath)) {
-        fs.mkdirSync(fullPath, { recursive: true });
+      const created = fs.mkdirSync(fullPath, { recursive: true });
+      if (created) {
         console.log(`  Created: ${dir}`);
       }
     });
@@ -204,8 +247,9 @@ class AvenxCLI {
   /**
    * Generates a new Bridge class and template file.
    * @param name
+   * @param {boolean} [dryRun] - If true, logs the actions without writing any files.
    */
-  generateBridge(name) {
+  generateBridge(name, dryRun = false) {
     if (!name) {
       this.fail('Please provide a bridge name (e.g., avenx g bridge auth)');
       return;
@@ -215,14 +259,22 @@ class AvenxCLI {
     const capitalizedName = baseName + 'Bridge';
 
     const globalDir = path.join(this.baseDir, this.config.srcDir, 'global');
-    if (!fs.existsSync(globalDir)) {
-      fs.mkdirSync(globalDir, { recursive: true });
-    }
-
     const bridgePath = path.join(globalDir, `${lowerName}.bridge.js`);
 
     if (this.abortIfGeneratedPathExists('Bridge', lowerName, [bridgePath])) {
       return;
+    }
+
+    if (dryRun) {
+      console.log(
+        `🧪 [Dry Run] Bridge '${capitalizedName}' would be created at ${this.config.srcDir}/global/${lowerName}.bridge.js`,
+      );
+      console.log('🧪 [Dry Run] No files were written.');
+      return;
+    }
+
+    if (!fs.existsSync(globalDir)) {
+      fs.mkdirSync(globalDir, { recursive: true });
     }
 
     const template = this.readTemplate('bridge', 'bridge.js.template');
@@ -236,8 +288,9 @@ class AvenxCLI {
   /**
    * Generates a new Guard class and template file.
    * @param name
+   * @param {boolean} [dryRun] - If true, logs the actions without writing any files.
    */
-  generateGuard(name) {
+  generateGuard(name, dryRun = false) {
     if (!name) {
       this.fail('Please provide a guard name (e.g., avenx g guard auth)');
       return;
@@ -247,14 +300,22 @@ class AvenxCLI {
     const capitalizedName = baseName + 'Guard';
 
     const guardDir = path.join(this.baseDir, this.config.srcDir, 'guards');
-    if (!fs.existsSync(guardDir)) {
-      fs.mkdirSync(guardDir, { recursive: true });
-    }
-
     const guardPath = path.join(guardDir, `${lowerName}.guard.js`);
 
     if (this.abortIfGeneratedPathExists('Guard', lowerName, [guardPath])) {
       return;
+    }
+
+    if (dryRun) {
+      console.log(
+        `🧪 [Dry Run] Guard '${capitalizedName}' would be created at ${this.config.srcDir}/guards/${lowerName}.guard.js`,
+      );
+      console.log('🧪 [Dry Run] No files were written.');
+      return;
+    }
+
+    if (!fs.existsSync(guardDir)) {
+      fs.mkdirSync(guardDir, { recursive: true });
     }
 
     const template = this.readTemplate('guard', 'guard.js.template');
@@ -268,8 +329,9 @@ class AvenxCLI {
   /**
    * Generates a new Page class and template files.
    * @param name
+   * @param {boolean} [dryRun] - If true, logs the actions without writing any files.
    */
-  generatePage(name) {
+  generatePage(name, dryRun = false) {
     if (!name) {
       this.fail('Please provide a page name (e.g., avenx g page home)');
       return;
@@ -278,15 +340,23 @@ class AvenxCLI {
     const { capitalizedName, folderFileName: lowerName } = parseName(name);
 
     const pageDir = path.join(this.baseDir, this.config.srcDir, 'pages');
-    if (!fs.existsSync(pageDir)) {
-      fs.mkdirSync(pageDir, { recursive: true });
-    }
-
     const jsPath = path.join(pageDir, `${lowerName}.page.js`);
     const cssPath = path.join(pageDir, `${lowerName}.page.css`);
 
     if (this.abortIfGeneratedPathExists('Page', lowerName, [jsPath, cssPath])) {
       return;
+    }
+
+    if (dryRun) {
+      console.log(`🧪 [Dry Run] Page '${capitalizedName}' would be created at:`);
+      console.log(`  ${this.config.srcDir}/pages/${lowerName}.page.js`);
+      console.log(`  ${this.config.srcDir}/pages/${lowerName}.page.css`);
+      console.log('🧪 [Dry Run] No files were written.');
+      return;
+    }
+
+    if (!fs.existsSync(pageDir)) {
+      fs.mkdirSync(pageDir, { recursive: true });
     }
 
     const jsTemplate = this.readTemplate('page', 'page.js.template');
@@ -302,8 +372,9 @@ class AvenxCLI {
   /**
    * Generates a new component folder and template files, and registers it in main.app.js.
    * @param name
+   * @param {boolean} [dryRun] - If true, logs the actions without writing any files.
    */
-  generateComponent(name) {
+  generateComponent(name, dryRun = false) {
     if (!name) {
       this.fail('Please provide a component name (e.g., avenx g my-component)');
       return;
@@ -314,6 +385,17 @@ class AvenxCLI {
     const compDir = path.join(this.baseDir, this.config.srcDir, 'components', lowerName);
 
     if (this.abortIfGeneratedPathExists('Component', lowerName, [compDir])) {
+      return;
+    }
+
+    if (dryRun) {
+      console.log(`🧪 [Dry Run] Component '${lowerName}' would be created at:`);
+      console.log(`  ${this.config.srcDir}/components/${lowerName}/${lowerName}.component.js`);
+      console.log(`  ${this.config.srcDir}/components/${lowerName}/${lowerName}.component.css`);
+      console.log(`🧪 [Dry Run] ${this.config.srcDir}/main.app.js would be updated with:`);
+      console.log(`  import ${capitalizedName} from './components/${lowerName}/${lowerName}.component.js';`);
+      console.log(`  app.register('${capitalizedName}', ${capitalizedName});`);
+      console.log('🧪 [Dry Run] No files were written.');
       return;
     }
 
@@ -384,10 +466,236 @@ class AvenxCLI {
   }
 
   /**
+   * Automatically removes imports, registrations, and mount statements for a class from src/main.app.js.
+   * @param {string} className
+   * @param {string} folderName
+   */
+  unregisterFromMainApp(className, folderName) {
+    const mainPath = path.join(this.baseDir, this.config.srcDir, 'main.app.js');
+    if (!fs.existsSync(mainPath)) return;
+
+    const content = fs.readFileSync(mainPath, 'utf-8');
+
+    // Remove import statements (handle single or double quotes, and optional trailing semicolon or carriage return)
+    const importRegex = new RegExp(
+      `^import\\s+(?:${className}|\\{\\s*${className}\\s*\\})\\s+from\\s+['"].*?${folderName}.*?['"];?\\r?\\n?`,
+      'm'
+    );
+    const generalImportRegex = new RegExp(
+      `^import\\s+(?:${className}|\\{\\s*${className}\\s*\\})\\s+from\\s+['"].*?['"];?\\r?\\n?`,
+      'm'
+    );
+
+    // Remove app.register calls
+    const registerRegex = new RegExp(
+      `^\\s*app\\.register\\(\\s*['"]${className}['"]\\s*,\\s*${className}\\s*\\);?\\r?\\n?`,
+      'm'
+    );
+
+    // Remove app.mount calls and their commented versions
+    const mountRegex = new RegExp(
+      `^\\s*(?://\\s*)?app\\.mount\\(\\s*['"]${className}['"]\\s*\\);?\\r?\\n?`,
+      'm'
+    );
+    const commentedMountRegex = new RegExp(
+      `^\\s*(?://\\s*)?app\\.mount\\(\\s*['"]${className}['"]\\s*\\);?\\s*//\\s*Uncomment\\s+to\\s+mount\\s+this\\s+component\\r?\\n?`,
+      'm'
+    );
+
+    let newContent = content
+      .replace(commentedMountRegex, '')
+      .replace(mountRegex, '')
+      .replace(registerRegex, '')
+      .replace(importRegex, '');
+
+    // Fall back to general import regex if className is imported but path didn't match the specific folderName
+    if (newContent === content) {
+      newContent = content
+        .replace(commentedMountRegex, '')
+        .replace(mountRegex, '')
+        .replace(registerRegex, '')
+        .replace(generalImportRegex, '');
+    } else {
+      // In case the specific regex replaced it, let's also make sure we attempt to replace general just in case
+      newContent = newContent.replace(generalImportRegex, '');
+    }
+
+    // Clean up extra consecutive newlines
+    newContent = newContent.replace(/\n{3,}/g, '\n\n');
+
+    if (content !== newContent) {
+      fs.writeFileSync(mainPath, newContent);
+      console.log(`✅ Cleaned up imports and registrations for '${className}' in ${this.config.srcDir}/main.app.js`);
+    }
+  }
+
+  /**
+   * Destroys a component folder and template files, and unregisters it from main.app.js.
+   * @param {string} name
+   * @param {boolean} [dryRun]
+   */
+  destroyComponent(name, dryRun = false) {
+    if (!name) {
+      this.fail('Please provide a component name (e.g., avenx d my-component)');
+      return;
+    }
+
+    const { capitalizedName, folderFileName: lowerName } = parseName(name);
+    const compDir = path.join(this.baseDir, this.config.srcDir, 'components', lowerName);
+
+    if (dryRun) {
+      console.log(`🧪 [Dry Run] Component '${lowerName}' files would be deleted:`);
+      console.log(`  ${this.config.srcDir}/components/${lowerName}/${lowerName}.component.js`);
+      console.log(`  ${this.config.srcDir}/components/${lowerName}/${lowerName}.component.css`);
+      console.log(`  ${this.config.srcDir}/components/${lowerName}/`);
+      console.log(`🧪 [Dry Run] ${this.config.srcDir}/main.app.js would be updated to remove registrations/imports for '${capitalizedName}'.`);
+      console.log('🧪 [Dry Run] No files were deleted or modified.');
+      return;
+    }
+
+    if (fs.existsSync(compDir)) {
+      fs.rmSync(compDir, { recursive: true, force: true });
+      console.log(`✅ Component '${lowerName}' directory deleted at ${this.config.srcDir}/components/${lowerName}/`);
+    } else {
+      console.log(`ℹ️ Component '${lowerName}' directory was not found.`);
+    }
+
+    this.unregisterFromMainApp(capitalizedName, lowerName);
+  }
+
+  /**
+   * Destroys a page class and template files, and unregisters it from main.app.js.
+   * @param {string} name
+   * @param {boolean} [dryRun]
+   */
+  destroyPage(name, dryRun = false) {
+    if (!name) {
+      this.fail('Please provide a page name (e.g., avenx d page home)');
+      return;
+    }
+
+    const { capitalizedName, folderFileName: lowerName } = parseName(name);
+    const pageDir = path.join(this.baseDir, this.config.srcDir, 'pages');
+    const jsPath = path.join(pageDir, `${lowerName}.page.js`);
+    const cssPath = path.join(pageDir, `${lowerName}.page.css`);
+
+    if (dryRun) {
+      console.log(`🧪 [Dry Run] Page '${lowerName}' files would be deleted:`);
+      console.log(`  ${this.config.srcDir}/pages/${lowerName}.page.js`);
+      console.log(`  ${this.config.srcDir}/pages/${lowerName}.page.css`);
+      console.log(`🧪 [Dry Run] ${this.config.srcDir}/main.app.js would be updated to remove imports/registrations/routes for '${capitalizedName}'.`);
+      console.log('🧪 [Dry Run] No files were deleted or modified.');
+      return;
+    }
+
+    let deletedAny = false;
+    if (fs.existsSync(jsPath)) {
+      fs.rmSync(jsPath, { force: true });
+      console.log(`  Deleted: ${this.config.srcDir}/pages/${lowerName}.page.js`);
+      deletedAny = true;
+    }
+    if (fs.existsSync(cssPath)) {
+      fs.rmSync(cssPath, { force: true });
+      console.log(`  Deleted: ${this.config.srcDir}/pages/${lowerName}.page.css`);
+      deletedAny = true;
+    }
+
+    if (deletedAny) {
+      console.log(`✅ Page '${capitalizedName}' files deleted.`);
+    } else {
+      console.log(`ℹ️ Page '${capitalizedName}' files were not found.`);
+    }
+
+    this.unregisterFromMainApp(capitalizedName, lowerName);
+  }
+
+  /**
+   * Destroys a Bridge class file.
+   * @param {string} name
+   * @param {boolean} [dryRun]
+   */
+  destroyBridge(name, dryRun = false) {
+    if (!name) {
+      this.fail('Please provide a bridge name (e.g., avenx d bridge auth)');
+      return;
+    }
+
+    const { capitalizedName: baseName, folderFileName: lowerName } = parseName(name);
+    const capitalizedName = baseName + 'Bridge';
+    const globalDir = path.join(this.baseDir, this.config.srcDir, 'global');
+    const bridgePath = path.join(globalDir, `${lowerName}.bridge.js`);
+
+    if (dryRun) {
+      console.log(`🧪 [Dry Run] Bridge '${capitalizedName}' file would be deleted:`);
+      console.log(`  ${this.config.srcDir}/global/${lowerName}.bridge.js`);
+      console.log(`🧪 [Dry Run] ${this.config.srcDir}/main.app.js would be updated to remove imports/registrations for '${capitalizedName}'.`);
+      console.log('🧪 [Dry Run] No files were deleted or modified.');
+      return;
+    }
+
+    if (fs.existsSync(bridgePath)) {
+      fs.rmSync(bridgePath, { force: true });
+      console.log(`✅ Bridge '${capitalizedName}' file deleted at ${this.config.srcDir}/global/${lowerName}.bridge.js`);
+    } else {
+      console.log(`ℹ️ Bridge '${capitalizedName}' file was not found.`);
+    }
+
+    this.unregisterFromMainApp(capitalizedName, lowerName);
+  }
+
+  /**
+   * Destroys a Guard class file.
+   * @param {string} name
+   * @param {boolean} [dryRun]
+   */
+  destroyGuard(name, dryRun = false) {
+    if (!name) {
+      this.fail('Please provide a guard name (e.g., avenx d guard auth)');
+      return;
+    }
+
+    const { capitalizedName: baseName, folderFileName: lowerName } = parseName(name);
+    const capitalizedName = baseName + 'Guard';
+    const guardDir = path.join(this.baseDir, this.config.srcDir, 'guards');
+    const guardPath = path.join(guardDir, `${lowerName}.guard.js`);
+
+    if (dryRun) {
+      console.log(`🧪 [Dry Run] Guard '${capitalizedName}' file would be deleted:`);
+      console.log(`  ${this.config.srcDir}/guards/${lowerName}.guard.js`);
+      console.log(`🧪 [Dry Run] ${this.config.srcDir}/main.app.js would be updated to remove imports/registrations for '${capitalizedName}'.`);
+      console.log('🧪 [Dry Run] No files were deleted or modified.');
+      return;
+    }
+
+    if (fs.existsSync(guardPath)) {
+      fs.rmSync(guardPath, { force: true });
+      console.log(`✅ Guard '${capitalizedName}' file deleted at ${this.config.srcDir}/guards/${lowerName}.guard.js`);
+    } else {
+      console.log(`ℹ️ Guard '${capitalizedName}' file was not found.`);
+    }
+
+    this.unregisterFromMainApp(capitalizedName, lowerName);
+  }
+
+  /**
    * Runs the compiler build.
    */
   buildProject() {
     new AvenxCompiler(this.config).build();
+  }
+
+  /**
+   * Cleans the project by deleting the build output directory.
+   */
+  cleanProject() {
+    const distDir = path.join(this.baseDir, this.config.distDir);
+    if (fs.existsSync(distDir)) {
+      console.log(`🧹 Cleaning build output directory: ${this.config.distDir}...`);
+      fs.rmSync(distDir, { recursive: true, force: true });
+      console.log('✅ Clean complete.');
+    } else {
+      console.log(`🧹 Build output directory ${this.config.distDir} does not exist. Nothing to clean.`);
+    }
   }
 
   /**
@@ -504,6 +812,18 @@ class AvenxCLI {
       });
     });
 
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(
+          `\n❌ Port ${port} is already in use.\n` +
+            `   Stop the process using that port, or start the dev server on a different one.\n`,
+        );
+        process.exit(1);
+      }
+      // Re-throw anything unexpected so it is not silently swallowed.
+      throw err;
+    });
+
     server.listen(port, () => {
       const url = `http://localhost:${port}`;
       console.log(`\n🚀 Dev-Server running at ${url}`);
@@ -572,19 +892,27 @@ class AvenxCLI {
    */
   printHelp() {
     console.log(`
-Avenx-JS CLI
-Usage: avenx <command> [type] [name]
+\x1b[1;36mAvenx-JS CLI\x1b[0m
+\x1b[1mUsage:\x1b[0m \x1b[32mavenx\x1b[0m \x1b[90m<command> [type] [name]\x1b[0m
 
-Commands:
-  init                      Initialize a new Avenx project structure
-  generate component <name> Generate a new component (alias: g)
-  generate page <name>      Generate a new page (alias: g p)
-  generate bridge <name>    Generate a new shared reactive bridge
-  generate guard <name>     Generate a new route guard
-  build (b)                 Build the project using configured output directory
-  check (lint)              Validate templates without building
-  serve [port]              Start dev server with hot-reload (default: 3000)
-  help                      Show this help message
+\x1b[1;36mCommands:\x1b[0m
+  \x1b[32minit\x1b[0m                      \x1b[90mInitialize a new Avenx project structure\x1b[0m
+  \x1b[32mgenerate component <name>\x1b[0m \x1b[90mGenerate a new component (alias: g)\x1b[0m
+  \x1b[32mgenerate page <name>\x1b[0m      \x1b[90mGenerate a new page (alias: g p)\x1b[0m
+  \x1b[32mgenerate bridge <name>\x1b[0m    \x1b[90mGenerate a new shared reactive bridge\x1b[0m
+  \x1b[32mgenerate guard <name>\x1b[0m     \x1b[90mGenerate a new route guard\x1b[0m
+  \x1b[32mdestroy component <name>\x1b[0m  \x1b[90mDelete a component and its registrations (alias: d)\x1b[0m
+  \x1b[32mdestroy page <name>\x1b[0m       \x1b[90mDelete a page (alias: d p)\x1b[0m
+  \x1b[32mdestroy bridge <name>\x1b[0m     \x1b[90mDelete a shared reactive bridge\x1b[0m
+  \x1b[32mdestroy guard <name>\x1b[0m      \x1b[90mDelete a route guard\x1b[0m
+  \x1b[32mbuild (b)\x1b[0m                 \x1b[90mBuild the project using configured output directory\x1b[0m
+  \x1b[32mclean\x1b[0m                     \x1b[90mClear build output directory\x1b[0m
+  \x1b[32mcheck (lint)\x1b[0m              \x1b[90mValidate templates without building\x1b[0m
+  \x1b[32mserve [port]\x1b[0m              \x1b[90mStart dev server with hot-reload (default: 3000)\x1b[0m
+  \x1b[32mhelp\x1b[0m                      \x1b[90mShow this help message\x1b[0m
+
+\x1b[1;36mOptions:\x1b[0m
+  \x1b[32m--dry-run, -d\x1b[0m             \x1b[90mPreview actions without writing or deleting any files\x1b[0m
     `);
   }
 }
@@ -592,7 +920,7 @@ Commands:
 if (command === '-v' || command === '--version') {
   console.log('Avenx-JS v' + packageJson.version);
   process.exit(0);
-} else {  
+} else {
   const cli = new AvenxCLI();
   cli.run(command, args);
 }

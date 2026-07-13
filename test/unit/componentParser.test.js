@@ -1,6 +1,6 @@
-const assert = require('assert');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
-const ComponentParser = require('../../lib/compiler/ComponentParser');
+import assert from 'assert';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
+import ComponentParser from '../../lib/compiler/ComponentParser.js';
 
 try {
   console.log('🧪 Testing ComponentParser...');

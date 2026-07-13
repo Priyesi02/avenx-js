@@ -1,12 +1,12 @@
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
+import assert from 'assert';
+import path from 'path';
+import fs from 'fs';
 
 // Set env to test so that loadConfig throws validation errors instead of process.exit
 process.env.NODE_ENV = 'test';
 
-const loadConfig = require('../../lib/config');
-const AvenxCompiler = require('../../lib/compiler');
+import loadConfig from '../../lib/config.js';
+import AvenxCompiler from '../../lib/compiler.js';
 
 try {
   console.log('🧪 Testing Avenx Config and Custom Directory CLI Options...');
@@ -38,7 +38,7 @@ try {
       if (err.code === 'ERR_ASSERTION') throw err;
       assert.ok(
         err.message.includes(expectedMsgPart),
-        `Expected error message "${err.message}" to contain "${expectedMsgPart}"`
+        `Expected error message "${err.message}" to contain "${expectedMsgPart}"`,
       );
       return;
     }
@@ -61,7 +61,7 @@ try {
     writeTestConfig({
       srcDir: 'app-src',
       distDir: 'public-out',
-      server: { port: 8080 }
+      server: { port: 8080 },
     });
     const customConfig = loadConfig();
     assert.strictEqual(customConfig.srcDir, 'app-src');
@@ -107,12 +107,11 @@ try {
     const compiler = new AvenxCompiler({
       srcDir: 'custom-src',
       distDir: 'custom-dist',
-      rootDir: '/tmp/test-project'
+      rootDir: '/tmp/test-project',
     });
     assert.strictEqual(compiler.rootDir, '/tmp/test-project');
     assert.strictEqual(compiler.srcDir, path.join('/tmp/test-project', 'custom-src'));
     assert.strictEqual(compiler.distDir, path.join('/tmp/test-project', 'custom-dist'));
-
   } finally {
     cleanupTestConfig();
   }

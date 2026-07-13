@@ -1,6 +1,6 @@
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
 // Importieren des zentralen QS-Helpers für Mocks und Globals
-const { MockDOMElement, setupDOMMock, teardownDOMMock } = require('../helpers/dom-mock');
+import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 // Testfall unter Verwendung des zentralisierten Mocks
 /**

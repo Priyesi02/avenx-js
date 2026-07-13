@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { ListManager } = require('../../lib/core/renderer/listManager');
+import assert from 'assert';
+import { ListManager } from '../../lib/core/renderer/listManager.js';
 
 // Copy lightweight mock DOM setup from list_reused_nodes.test.js to keep the test self-contained and run in a pure Node environment.
 class MockNode {

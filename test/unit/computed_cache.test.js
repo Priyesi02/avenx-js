@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { StateFactory } = require('../../lib/core/reactive/createState');
+import assert from 'assert';
+import { StateFactory } from '../../lib/core/reactive/createState.js';
 
 /**
  *

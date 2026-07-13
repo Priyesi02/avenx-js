@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { Sanitizer } = require('../../lib/core/security/sanitize');
-const { MockDOMElement, setupDOMMock, teardownDOMMock } = require('../helpers/dom-mock');
+import assert from 'assert';
+import { Sanitizer } from '../../lib/core/security/sanitize.js';
+import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 function testSanitizerWithDOM() {
   console.log('🧪 Testing Sanitizer with DOMParser...');

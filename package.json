@@ -2,7 +2,11 @@
   "name": "avenx-core",
   "version": "0.4.3",
   "description": "A lightweight reactive framework with scoped CSS and custom components.",
+  "type": "module",
   "main": "lib/compiler.js",
+  "engines": {
+    "node": ">=18"
+  },
   "exports": {
     ".": {
       "types": "./lib/compiler.d.ts",
@@ -23,11 +27,15 @@
   "files": [
     "bin/",
     "lib/",
+    "dist/",
     "templates/",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
+    "build": "node scripts/build.js",
+    "prepare": "npm run build",
+    "pretest": "npm run build",
     "test": "node test/run-tests.js",
     "test:unit": "node test/run-tests.js unit",
     "test:integration": "node test/run-tests.js integration",
@@ -66,8 +74,10 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "c8": "^9.1.0",
+    "esbuild": "^0.28.1",
     "eslint": "^10.5.0",
     "eslint-plugin-jsdoc": "^63.0.7",
+    "happy-dom": "^20.10.6",
     "jsdoc": "^4.0.2",
     "prettier": "^3.8.4",
     "terser": "^5.48.0"

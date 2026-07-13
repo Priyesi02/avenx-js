@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
-const { MockDOMElement, setupDOMMock, teardownDOMMock } = require('../helpers/dom-mock');
+import assert from 'assert';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
+import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 /**
  *

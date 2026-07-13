@@ -1,7 +1,7 @@
-const assert = require('assert');
-const ComponentParser = require('../../lib/compiler/ComponentParser');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
+import assert from 'assert';
+import ComponentParser from '../../lib/compiler/ComponentParser.js';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
 
 // Mock DOM environment for runtime tests
 const createMockElement = (tagName, value = '', attrs = {}, nodeType = 1) => {

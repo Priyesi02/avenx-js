@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { TemplateRenderer } = require('../../lib/core/renderer/renderTemplate');
-const { HtmlEscaper, SafeHtml, html } = require('../../lib/core/security/escapeHtml');
+import assert from 'assert';
+import { TemplateRenderer } from '../../lib/core/renderer/renderTemplate.js';
+import { HtmlEscaper, SafeHtml, html } from '../../lib/core/security/escapeHtml.js';
 
 try {
   console.log('🧪 Testing HtmlEscaper...');

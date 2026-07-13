@@ -1,7 +1,12 @@
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
-const AvenxCompiler = require('../../lib/compiler');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import assert from 'assert';
+import path from 'path';
+import fs from 'fs';
+import AvenxCompiler from '../../lib/compiler.js';
 
 try {
   console.log('🧪 Testing AvenxCompiler processMain...');

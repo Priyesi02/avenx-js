@@ -1,6 +1,11 @@
-const { spawnSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import { spawnSync } from 'child_process';
+import path from 'path';
+import fs from 'fs';
 
 const benchesDir = __dirname;
 const files = fs.readdirSync(benchesDir).filter((f) => f.endsWith('.bench.js'));

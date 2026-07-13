@@ -1,11 +1,16 @@
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
-const { AvenxPage } = require('../../lib/core/runtime/AvenxPage');
-const { AvenxApp } = require('../../lib/core/runtime/AvenxApp');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
-const ComponentParser = require('../../lib/compiler/ComponentParser');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
+import { AvenxPage } from '../../lib/core/runtime/AvenxPage.js';
+import { AvenxApp } from '../../lib/core/runtime/AvenxApp.js';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
+import ComponentParser from '../../lib/compiler/ComponentParser.js';
 
 // ==========================================
 // 1. Lightweight Mock DOM & HTML Parser

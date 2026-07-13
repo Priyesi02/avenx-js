@@ -1,4 +1,4 @@
-const assert = require('assert');
+import assert from 'assert';
 
 // Mock DOM environment
 const mockElement = {
@@ -34,8 +34,8 @@ global.DOMParser = class {
 
 global.Node = { ELEMENT_NODE: 1, TEXT_NODE: 3 };
 
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
-const { AvenxApp } = require('../../lib/core/runtime/AvenxApp');
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
+import { AvenxApp } from '../../lib/core/runtime/AvenxApp.js';
 
 /**
  *

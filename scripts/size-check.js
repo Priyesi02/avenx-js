@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
-const zlib = require('zlib');
-const { minify } = require('terser');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import zlib from 'zlib';
+import { minify } from 'terser';
 
 // Helper to parse simple command line arguments
 function parseArgs() {

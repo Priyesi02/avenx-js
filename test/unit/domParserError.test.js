@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { DomPatcher } = require('../../lib/core/renderer/domPatch');
-const { MockDOMElement, setupDOMMock, teardownDOMMock } = require('../helpers/dom-mock');
+import assert from 'assert';
+import { DomPatcher } from '../../lib/core/renderer/domPatch.js';
+import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 /**
  *

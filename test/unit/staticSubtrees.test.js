@@ -1,8 +1,8 @@
-const assert = require('assert');
-const ComponentParser = require('../../lib/compiler/ComponentParser');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
-const { DomPatcher } = require('../../lib/core/renderer/domPatch');
-const { MockDOMElement, setupDOMMock, teardownDOMMock } = require('../helpers/dom-mock');
+import assert from 'assert';
+import ComponentParser from '../../lib/compiler/ComponentParser.js';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
+import { DomPatcher } from '../../lib/core/renderer/domPatch.js';
+import { MockDOMElement, setupDOMMock, teardownDOMMock } from '../helpers/dom-mock.js';
 
 /**
  *

@@ -1,7 +1,7 @@
-const assert = require('assert');
-const { EventBinder } = require('../../lib/core/events/bindEvents');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
-const ComponentParser = require('../../lib/compiler/ComponentParser');
+import assert from 'assert';
+import { EventBinder } from '../../lib/core/events/bindEvents.js';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
+import ComponentParser from '../../lib/compiler/ComponentParser.js';
 
 try {
   console.log('🧪 Testing Event Modifiers...');
@@ -97,13 +97,13 @@ try {
   const preventEl = createMockElement('DIV', { '@click.prevent': 'handlePrevent' });
   binder.bind(preventEl, dispatcher);
   resetDispatcher();
-  
+
   let preventCalled = false;
   const mockPreventEvent = {
     type: 'click',
     preventDefault() {
       preventCalled = true;
-    }
+    },
   };
   preventEl.trigger('click', mockPreventEvent);
   assert.strictEqual(executedSource, 'handlePrevent');
@@ -119,7 +119,7 @@ try {
     type: 'click',
     stopPropagation() {
       stopCalled = true;
-    }
+    },
   };
   stopEl.trigger('click', mockStopEvent);
   assert.strictEqual(executedSource, 'handleStop');
@@ -173,7 +173,7 @@ try {
     },
     stopPropagation() {
       chainStop = true;
-    }
+    },
   };
   chainedEl.trigger('click', mockChainEvent);
   assert.strictEqual(executedSource, 'handleChained');

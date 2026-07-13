@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { AvenxLogger, defaultFormatter } = require('../../lib/core/runtime/AvenxLogger');
+import assert from 'assert';
+import { AvenxLogger, defaultFormatter } from '../../lib/core/runtime/AvenxLogger.js';
 
 function testLoggerLevels() {
   console.log('🧪 Testing AvenxLogger Levels and Priorities...');

@@ -1,6 +1,6 @@
-const assert = require('assert');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
-const { ListManager } = require('../../lib/core/renderer/listManager');
+import assert from 'assert';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
+import { ListManager } from '../../lib/core/renderer/listManager.js';
 
 // ==========================================
 // 1. Lightweight Mock DOM & HTML Parser

@@ -51,3 +51,11 @@ Registers a global reactive state bridge. The bridge will be initialized and exp
 ```javascript
 app.registerBridge('AuthBridge', { isLoggedIn: false });
 ```
+
+### `mount(name, targetSelector)`
+
+Mounts the initialized application onto the specified DOM element, triggering the component lifecycle and bootstrapping the template rendering.
+
+```javascript
+app.mount('#app');
+```

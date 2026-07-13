@@ -1,5 +1,5 @@
-const assert = require('assert');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
+import assert from 'assert';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
 
 try {
   console.log('🧪 Testing StyleProcessor...');

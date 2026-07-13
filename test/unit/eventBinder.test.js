@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { EventBinder } = require('../../lib/core/events/bindEvents');
+import assert from 'assert';
+import { EventBinder } from '../../lib/core/events/bindEvents.js';
 
 try {
   console.log('🧪 Testing EventBinder...');

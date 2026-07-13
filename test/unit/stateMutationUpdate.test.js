@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
+import assert from 'assert';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
 
 // Mock DOM environment for runtime tests
 const createMockElement = (tagName, value = '', attrs = {}, nodeType = 1) => {

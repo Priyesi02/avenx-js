@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { ListManager } = require('../../lib/core/renderer/listManager');
+import assert from 'assert';
+import { ListManager } from '../../lib/core/renderer/listManager.js';
 
 // ==========================================
 // 1. Lightweight Mock DOM & HTML Parser

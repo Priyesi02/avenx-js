@@ -1,5 +1,5 @@
-const assert = require('assert');
-const { DynamicEvaluator } = require('../../lib/core/security/evaluator');
+import assert from 'assert';
+import { DynamicEvaluator } from '../../lib/core/security/evaluator.js';
 
 try {
   console.log(

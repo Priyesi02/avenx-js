@@ -1,10 +1,16 @@
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
-const StyleProcessor = require('../../lib/compiler/StyleProcessor');
-const ComponentParser = require('../../lib/compiler/ComponentParser');
-const { AvenxComponent } = require('../../lib/core/runtime/AvenxComponent');
-const { html } = require('../../lib/core/security/escapeHtml');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+import assert from 'assert';
+import fs from 'fs';
+import path from 'path';
+import StyleProcessor from '../../lib/compiler/StyleProcessor.js';
+import ComponentParser from '../../lib/compiler/ComponentParser.js';
+import { AvenxComponent } from '../../lib/core/runtime/AvenxComponent.js';
+import { html } from '../../lib/core/security/escapeHtml.js';
+import { logger } from '../../lib/core/runtime/AvenxLogger.js';
 
 // --- Mock DOM Implementation (reusing component_props.test.js mock DOM structure) ---
 class MockNode {
@@ -80,7 +86,7 @@ class MockElementNode extends MockNode {
     super(1, tagName.toUpperCase());
     this.tagName = tagName.toUpperCase();
     this.attrs = { ...attrs };
-    
+
     // Add realistic style and classList properties
     const self = this;
     this._style = {
@@ -94,12 +100,11 @@ class MockElementNode extends MockNode {
         } else {
           self.removeAttribute('style');
         }
-      }
+      },
     };
-    this._display = attrs.style && attrs.style.includes('display:') 
-      ? attrs.style.split('display:')[1].trim().split(';')[0]
-      : '';
-    
+    this._display =
+      attrs.style && attrs.style.includes('display:') ? attrs.style.split('display:')[1].trim().split(';')[0] : '';
+
     this._classList = {
       add: (cls) => {
         const classes = this.getAttribute('class') ? this.getAttribute('class').split(/\s+/) : [];
@@ -119,7 +124,7 @@ class MockElementNode extends MockNode {
       contains: (cls) => {
         const classes = this.getAttribute('class') ? this.getAttribute('class').split(/\s+/) : [];
         return classes.includes(cls);
-      }
+      },
     };
   }
 
@@ -400,7 +405,7 @@ global.document = {
   },
   createElementNS: (ns, tagName) => {
     return new MockElementNode(tagName, { xmlns: ns });
-  }
+  },
 };
 
 global.DOMParser = class {
@@ -427,7 +432,7 @@ async function runTests() {
     console.log('  Testing compiler validateTemplate checks for new directives...');
     const cp = new ComponentParser(new StyleProcessor());
     const tempFile = path.join(__dirname, 'TempDirComp.component.js');
-    
+
     // Test directive referencing undeclared variable should log warning
     const tempContent = `
       <div data-ax-show="undeclaredVar">Hello</div>
@@ -435,7 +440,7 @@ async function runTests() {
     fs.writeFileSync(tempFile, tempContent, 'utf-8');
 
     let loggedWarning = false;
-    const logger = require('../../lib/core/runtime/AvenxLogger').logger;
+
     const originalLoggerWarn = logger.warn;
     logger.warn = (msg) => {
       if (msg.includes('Undeclared variable') && msg.includes('undeclaredVar')) {
@@ -469,7 +474,11 @@ async function runTests() {
 
     const contentDiv = showTarget.querySelector('[data-ax-show]');
     assert.ok(contentDiv, 'Content div should be mounted');
-    assert.strictEqual(contentDiv.style.display, '', 'Display should be empty (visible) by default when isVisible is true');
+    assert.strictEqual(
+      contentDiv.style.display,
+      '',
+      'Display should be empty (visible) by default when isVisible is true',
+    );
 
     // Mutate state to false
     showComp.state.isVisible = false;
@@ -542,8 +551,16 @@ async function runTests() {
     const escEl = htmlTarget.querySelector('.escaped');
     const rawEl = htmlTarget.querySelector('.raw');
 
-    assert.strictEqual(escEl.innerHTML, 'Hello &lt;b&gt;World&lt;/b&gt;', 'Content should be escaped by default to prevent XSS');
-    assert.strictEqual(rawEl.innerHTML, 'Hello <b>World</b>', 'Content should render raw HTML if SafeHtml wrapper is used');
+    assert.strictEqual(
+      escEl.innerHTML,
+      'Hello &lt;b&gt;World&lt;/b&gt;',
+      'Content should be escaped by default to prevent XSS',
+    );
+    assert.strictEqual(
+      rawEl.innerHTML,
+      'Hello <b>World</b>',
+      'Content should render raw HTML if SafeHtml wrapper is used',
+    );
 
     // 5. Scoping Directives inside loops (ListManager support)
     console.log('  Testing directives inside list rendering loops...');
@@ -553,7 +570,7 @@ async function runTests() {
           items: [
             { id: 1, name: 'Item 1', active: true },
             { id: 2, name: 'Item 2', active: false },
-          ]
+          ],
         });
       }
       render() {

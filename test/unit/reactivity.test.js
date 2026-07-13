@@ -343,7 +343,7 @@ function testBridgeConstructorFailure() {
       app.registerBridge('BadBridge', BadBridge);
     },
     (err) => {
-      assert.strictEqual(err.name, 'Error');
+      assert.strictEqual(err.name, 'AvenxError');
       assert.ok(err.message.includes('[AVX_R17]'));
       assert.ok(err.message.includes('Database initialization failed'));
       return true;
@@ -358,7 +358,7 @@ function testBridgeConstructorFailure() {
       app.registerBridge('ArrowBridge', arrowFuncBridge);
     },
     (err) => {
-      assert.strictEqual(err.name, 'Error');
+      assert.strictEqual(err.name, 'AvenxError');
       assert.ok(err.message.includes('[AVX_R17]'));
       assert.ok(err.message.includes('is not a constructor'));
       return true;

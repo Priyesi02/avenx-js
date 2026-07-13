@@ -42,7 +42,99 @@ For checkbox inputs, bind the `checked` attribute manually and listen for the `c
 
 This ensures that the checkbox's checked state is rendered from `state.checked` and that the state is updated whenever the checkbox changes.
 
-## 3. Loops (`<@for>`)
+## 3. Boolean Attributes
+
+Avenx-JS automatically handles standard HTML boolean attributes when they are bound to template expressions.
+
+For supported boolean attributes, the evaluated value controls both:
+
+- Whether the attribute is present in the rendered HTML.
+- The corresponding DOM property (`true` or `false`).
+
+If the expression evaluates to a truthy value, the attribute is added and the DOM property is set to `true`.
+
+If the expression evaluates to a falsy value, the attribute is removed and the DOM property is set to `false`.
+
+### Example
+
+```html
+<button disabled="{{ state.isSubmitting }}">
+  Submit
+</button>
+```
+
+When `state.isSubmitting` is `true`, the button is rendered as disabled.
+
+When `state.isSubmitting` is `false`, the `disabled` attribute is removed automatically and the button becomes enabled.
+
+### Supported Boolean Attributes
+
+Avenx-JS automatically handles the following standard HTML boolean attributes:
+
+- `checked`
+- `disabled`
+- `required`
+- `readonly`
+- `selected`
+- `multiple`
+- `autofocus`
+- `novalidate`
+- `formnovalidate`
+- `hidden`
+- `open`
+- `reversed`
+- `loop`
+- `controls`
+- `autoplay`
+- `muted`
+- `default`
+- `ismap`
+- `async`
+- `defer`
+
+### More Examples
+
+Checkbox:
+
+```html
+<input
+  type="checkbox"
+  checked="{{ state.accepted }}"
+/>
+```
+
+Input field:
+
+```html
+<input
+  type="text"
+  required="{{ state.requireName }}"
+  readonly="{{ state.readOnly }}"
+/>
+```
+
+Media element:
+
+```html
+<video
+  controls="{{ state.showControls }}"
+  autoplay="{{ state.autoPlay }}"
+  muted="{{ state.muted }}">
+</video>
+```
+
+Details element:
+
+```html
+<details open="{{ state.expanded }}">
+  <summary>More Information</summary>
+  <p>Content...</p>
+</details>
+```
+
+Bind boolean attributes to expressions that evaluate to `true` or `false`. Avenx-JS automatically adds or removes the attribute and updates the corresponding DOM property.
+
+## 4. Loops (`<@for>`)
 
 Render arrays using the custom `<@for>` loop tag. Loop blocks are translated to `<template>` tags and managed via the `ListManager` for efficient DOM list updates:
 
@@ -52,7 +144,7 @@ Render arrays using the custom `<@for>` loop tag. Loop blocks are translated to 
 </@for>
 ```
 
-## 4. Slots & Transclusion
+## 5. Slots & Transclusion
 
 Components can receive child HTML blocks using `<slot>` elements. Both default and named slots are fully supported.
 
@@ -83,7 +175,7 @@ Components can receive child HTML blocks using `<slot>` elements. Both default a
 
 If a component's caller does not provide content for a given slot, Avenx-JS automatically falls back to rendering the default content defined inside that `<slot>` element in the component's template. This applies to both named and default slots. For example, in the `Card` component above, if no `slot="header"` element is passed in, the header slot will render its fallback text, `Default Header`, instead of being left empty. This makes it easy to define sensible defaults for optional component content without requiring the caller to always supply every slot.
 
-## 5. SVG Support
+## 6. SVG Support
 
 Avenx-JS natively supports rendering SVG elements inside templates. During template cloning and patching, the framework automatically preserves the correct SVG namespace (`http://www.w3.org/2000/svg`), ensuring that SVG graphics render correctly in the browser.
 

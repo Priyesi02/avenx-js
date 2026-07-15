@@ -29,15 +29,69 @@ Generates boilerplate code for components, pages, bridges, and guards.
 
 - **Guard**: `npx avenx g guard admin` Creates a routing guard at `src/guards/admin.guard.js`.
 
-### 3. `avenx build` (alias: `b`)
+#### Command Options
+
+- **`--dry-run`** (alias: **`-d`**)  
+  Preview the files and changes that would be created without writing anything to disk.
+
+**Example:**
+
+```bash
+npx avenx g counter --dry-run
+```
+
+This command previews the generated files without actually creating them.
+
+### 3. `avenx destroy` (alias: `d`)
+
+Removes scaffolded files and cleans up their imports and registrations inside `src/main.app.js`.
+
+- **Component**: `npx avenx d counter` Deletes `src/components/counter/` and removes its registration and import from `src/main.app.js`.
+
+- **Page**: `npx avenx d p dashboard` Deletes `src/pages/dashboard.page.js` and `.css`, and cleans up its imports.
+
+- **Bridge**: `npx avenx d bridge settings` Deletes the global state bridge file at `src/global/settings.bridge.js`.
+
+- **Guard**: `npx avenx d guard admin` Deletes the routing guard file at `src/guards/admin.guard.js`.
+
+#### Command Options
+
+- **`--dry-run`** (alias: **`-d`**)  
+  Preview the files and changes that would be removed without deleting anything.
+
+**Example:**
+
+```bash
+npx avenx d counter --dry-run
+```
+
+This command previews which files would be removed without actually deleting them.
+
+### 4. `avenx build` (alias: `b`)
 
 Compiles all components, styles, pages, and bridges into `dist/bundle.js` and `dist/bundle.css`. It strips out runtime imports/exports to create a clean, single-file bundle that can be loaded in browsers directly.
 
-### 4. `avenx serve [port]`
+### 5. `avenx watch` (alias: `w`)
+
+Compiles the project once and then continues running in the background, watching the `src/` directory for changes.
+
+Whenever a file in the `src/` directory changes, Avenx automatically rebuilds the project and updates the generated files in the `dist/` directory. This keeps your compiled output up to date without manually running `avenx build` after every change.
+
+Unlike `avenx serve`, the `watch` command does not start a local development server or provide browser hot reloading. It only watches for file changes and continuously rebuilds the project in the background.
+
+**Example:**
+
+```bash
+npx avenx watch
+```
+
+Press **Ctrl + C** to stop watching.
+
+### 6. `avenx serve [port]`
 
 Starts a local hot-reloading development server (default port: 3000). It watches the `src/` directory for changes, automatically triggers a rebuild, and sends a live reload event to connected browser instances via a Server-Sent Events (SSE) bridge.
 
-### 5. `avenx check` (alias: `lint`)
+### 7. `avenx check` (alias: `lint`)
 
 Validates your project's templates without triggering a full production build.
 

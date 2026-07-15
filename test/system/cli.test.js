@@ -6,7 +6,7 @@ const __dirname = dirname(__filename);
 import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
-import { execSync, spawnSync } from 'child_process';
+import { execSync, spawnSync, spawn } from 'child_process';
 
 const TEST_DIR = path.join(__dirname, 'test-project');
 const BIN_PATH = path.join(__dirname, '../../bin/avenx.js');
@@ -45,7 +45,7 @@ function cleanup() {
 /**
  *
  */
-function runTest() {
+async function runTest() {
   console.log('🧪 Testing avenx init...');
 
   try {
@@ -57,6 +57,7 @@ function runTest() {
     // Assert that the first run logs the Created: lines
     assert.match(init1Output, /Created: src\/components/, 'first init run should log folder creation');
     assert.match(init1Output, /Created: \.vscode\/jsconfig\.json/, 'first init run should log file creation');
+    assert.match(init1Output, /Created: package\.json/, 'first init run should log package.json creation');
 
     // Run the init command again in the test directory
     const init2Output = execSync(`node ${BIN_PATH} init`, { cwd: TEST_DIR, encoding: 'utf8' });
@@ -74,6 +75,7 @@ function runTest() {
       '.vscode/settings.json',
       'index.html',
       'src/main.app.js',
+      'package.json',
     ];
 
     expectedPaths.forEach((p) => {
@@ -81,6 +83,23 @@ function runTest() {
       assert.ok(fs.existsSync(fullPath), `Missing expected path: ${p}`);
       console.log(`  ✅ Found: ${p}`);
     });
+
+    // Verify package.json exists and check contents
+    const packageJsonFile = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8'));
+    const expectedVersion = packageJsonFile.version;
+    const generatedPackagePath = path.join(TEST_DIR, 'package.json');
+    const generatedPackage = JSON.parse(fs.readFileSync(generatedPackagePath, 'utf-8'));
+    assert.strictEqual(generatedPackage.name, 'test-project', 'package.json name should match folder name');
+    assert.strictEqual(generatedPackage.type, 'module', 'package.json type should be module');
+    assert.deepStrictEqual(generatedPackage.scripts, {
+      dev: 'avenx serve',
+      build: 'avenx build',
+      serve: 'avenx serve',
+    }, 'package.json scripts should be pre-defined');
+    assert.deepStrictEqual(generatedPackage.dependencies, {
+      'avenx-core': `^${expectedVersion}`,
+    }, 'package.json dependencies should contain avenx-core with correct version');
+    console.log('  ✅ Verified package.json contents');
 
     // Verify content of a template file
     const settings = JSON.parse(fs.readFileSync(path.join(TEST_DIR, '.vscode/settings.json'), 'utf-8'));
@@ -373,6 +392,161 @@ function runTest() {
     assert.match(cleanAgainOutput, /does not exist\. Nothing to clean/, 'should handle non-existent directory');
 
     console.log('✅ Clean command tests passed!');
+
+    console.log('🧪 Testing avenx destroy component (dry-run & actual)...');
+
+    // 1. Dry run of destroying the default-box component
+    const defaultBoxDir = path.join(TEST_DIR, 'src/components/default-box');
+    assert.ok(fs.existsSync(defaultBoxDir), 'default-box dir should exist before destroy test');
+
+    const destroyDryRunOutput = execSync(`node ${BIN_PATH} destroy component default-box --dry-run`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+
+    assert.ok(fs.existsSync(defaultBoxDir), 'default-box dir should still exist after dry-run');
+    assert.match(destroyDryRunOutput, /🧪 \[Dry Run\] Component 'default-box' files would be deleted/, 'should print dry run message');
+    assert.match(destroyDryRunOutput, /No files were deleted or modified/, 'should report no modifications');
+
+    // Make sure main.app.js still contains the registration
+    let mainAppJsContent = fs.readFileSync(path.join(TEST_DIR, 'src/main.app.js'), 'utf-8');
+    assert.ok(mainAppJsContent.includes('DefaultBox'), 'DefaultBox registration should still exist in main.app.js');
+
+    // 2. Actual destroy
+    const destroyOutput = execSync(`node ${BIN_PATH} destroy component default-box`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+
+    assert.ok(!fs.existsSync(defaultBoxDir), 'default-box dir should be deleted');
+    assert.match(destroyOutput, /✅ Component 'default-box' directory deleted/, 'should log deletion message');
+    assert.match(destroyOutput, /Cleaned up imports and registrations/, 'should log clean up message');
+
+    mainAppJsContent = fs.readFileSync(path.join(TEST_DIR, 'src/main.app.js'), 'utf-8');
+    assert.ok(!mainAppJsContent.includes('DefaultBox'), 'DefaultBox registration should be removed from main.app.js');
+
+    // 3. Test destroying non-existent component handles gracefully
+    const destroyNonExistentOutput = execSync(`node ${BIN_PATH} d component default-box`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+    assert.match(destroyNonExistentOutput, /ℹ️ Component 'default-box' directory was not found/, 'should handle gracefully');
+
+    // 4. Test page generation & destroy
+    console.log('🧪 Testing avenx destroy page...');
+    // Create page first
+    execSync(`node ${BIN_PATH} generate page reports-test`, { cwd: TEST_DIR });
+    const reportsPageJs = path.join(TEST_DIR, 'src/pages/reports-test.page.js');
+    const reportsPageCss = path.join(TEST_DIR, 'src/pages/reports-test.page.css');
+    assert.ok(fs.existsSync(reportsPageJs), 'reports-test JS page should exist');
+    assert.ok(fs.existsSync(reportsPageCss), 'reports-test CSS page should exist');
+
+    // Add manual import to main.app.js to test cleanup
+    fs.appendFileSync(
+      path.join(TEST_DIR, 'src/main.app.js'),
+      "\nimport ReportsTest from './pages/reports-test.page.js';\n"
+    );
+
+    // Destroy page
+    const pageDestroyOutput = execSync(`node ${BIN_PATH} d p reports-test`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+    assert.ok(!fs.existsSync(reportsPageJs), 'reports-test JS page should be deleted');
+    assert.ok(!fs.existsSync(reportsPageCss), 'reports-test CSS page should be deleted');
+    assert.match(pageDestroyOutput, /✅ Page 'ReportsTest' files deleted/, 'should log page deletion');
+
+    mainAppJsContent = fs.readFileSync(path.join(TEST_DIR, 'src/main.app.js'), 'utf-8');
+    assert.ok(!mainAppJsContent.includes('ReportsTest'), 'ReportsTest import should be cleaned up');
+
+    // 5. Test bridge generation & destroy
+    console.log('🧪 Testing avenx destroy bridge...');
+    execSync(`node ${BIN_PATH} generate bridge auth-test`, { cwd: TEST_DIR });
+    const authBridgePath = path.join(TEST_DIR, 'src/global/auth-test.bridge.js');
+    assert.ok(fs.existsSync(authBridgePath), 'auth-test bridge should exist');
+
+    const bridgeDestroyOutput = execSync(`node ${BIN_PATH} d bridge auth-test`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+    assert.ok(!fs.existsSync(authBridgePath), 'auth-test bridge should be deleted');
+    assert.match(bridgeDestroyOutput, /✅ Bridge 'AuthTestBridge' file deleted/, 'should log bridge deletion');
+
+    // 6. Test guard generation & destroy
+    console.log('🧪 Testing avenx destroy guard...');
+    execSync(`node ${BIN_PATH} generate guard auth-test`, { cwd: TEST_DIR });
+    const authGuardPath = path.join(TEST_DIR, 'src/guards/auth-test.guard.js');
+    assert.ok(fs.existsSync(authGuardPath), 'auth-test guard should exist');
+
+    const guardDestroyOutput = execSync(`node ${BIN_PATH} d guard auth-test`, {
+      cwd: TEST_DIR,
+      encoding: 'utf8',
+    });
+    assert.ok(!fs.existsSync(authGuardPath), 'auth-test guard should be deleted');
+    assert.match(guardDestroyOutput, /✅ Guard 'AuthTestGuard' file deleted/, 'should log guard deletion');
+
+    console.log('✅ Destroy command tests passed!');
+
+    // 7. Test watch command
+    console.log('🧪 Testing avenx watch...');
+    const watchProc = spawn(process.execPath, [BIN_PATH, 'watch'], {
+      cwd: TEST_DIR,
+    });
+
+    let watchOutput = '';
+    let resolveWatchReady;
+    const watchReadyPromise = new Promise((resolve) => {
+      resolveWatchReady = resolve;
+    });
+
+    let resolveRebuildDone;
+    const rebuildDonePromise = new Promise((resolve) => {
+      resolveRebuildDone = resolve;
+    });
+
+    watchProc.stdout.on('data', (data) => {
+      const chunk = data.toString('utf8');
+      watchOutput += chunk;
+
+      if (chunk.includes('Watching for changes')) {
+        resolveWatchReady();
+      }
+      if (chunk.includes('Change detected') || chunk.includes('Rebuilding') || chunk.includes('Build completed')) {
+        if (watchOutput.includes('Build completed')) {
+          resolveRebuildDone();
+        }
+      }
+    });
+
+    // Wait for the watcher to start
+    await watchReadyPromise;
+    console.log('  Watch process started and is ready.');
+
+    // Make a change to a file to trigger rebuild
+    const mainAppJsPath = path.join(TEST_DIR, 'src/main.app.js');
+    fs.appendFileSync(mainAppJsPath, '\n// Trigger watch change\n');
+
+    // Wait for rebuild to trigger and finish
+    await rebuildDonePromise;
+    console.log('  ✅ Rebuild was successfully triggered on change.');
+
+    // Stop the watcher by sending SIGINT (Ctrl+C)
+    watchProc.kill('SIGINT');
+
+    const exitPromise = new Promise((resolve) => {
+      watchProc.on('exit', (code, signal) => {
+        resolve({ code, signal });
+      });
+    });
+
+    const { code: exitCode, signal: exitSignal } = await exitPromise;
+    assert.ok(
+      exitCode === 0 || exitCode === null || exitSignal === 'SIGINT',
+      `watch command should exit with 0 or be terminated by SIGINT (code: ${exitCode}, signal: ${exitSignal})`
+    );
+    console.log('  ✅ watch command exited gracefully on SIGINT.');
+
+    console.log('✅ All watch command tests passed!');
   } catch (error) {
     console.error('❌ Test failed!');
     console.error(error);

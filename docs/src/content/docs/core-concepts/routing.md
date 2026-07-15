@@ -38,6 +38,49 @@ Route segments starting with `:` are dynamic variables. The values parsed from t
   <h1>Viewing Profile ID: {{ id }}</h1>
 </div>
 ```
+### Query Parameters
+
+The portion of a route hash after `?` is automatically parsed into an object and made available as `state.query`. This works alongside dynamic parameters (`:id`) and can be read the same way,in templates or actions:
+
+```html
+<!-- src/pages/dashboard.page.js -->
+<!-- #/dashboard?tab=analytics&user=123 ->state.query.tab==='analytics' -->
+    <div class="dashboard">
+      <h1>Current tab: {{ query.tab }}</h1>
+    </div>
+
+```
+
+Query parameters are also available inside component actions using `this.state.query`:
+
+```javascript
+//src/pages/dashboard.page.js
+onMount() {
+  const tab = this.state.query.tab;
+  this.loadTabData(tab);
+}
+```
+#### Type Coercion
+While dynamic route parameters are always strings, query parameter values on the other hand are coerced based on their content:
+
+| Raw value | Parsed as |
+| ---- | ---- |
+| `"true"` | Boolean `true` |
+|`"false"` | Boolean `false`|
+| A numeric string(e.g. `"123"`) |  `Number` (e.g.`123`) |
+| Anything else | `String` |
+
+```javascript
+//#/settings?darkMode=true&fontSize=16&theme=blue
+state.query={
+  darkMode : true, //boolean
+  fontSize:16,     //number
+  theme: 'blue'   //string
+}
+```
+:::note
+If the route hash has no `?` segment,`state.query` is undefined rather than an empty object. Hence, check for its existence before accessing nested properties.
+:::
 
 ### Wildcard Path Matchers
 
@@ -59,7 +102,43 @@ The matched subpath is exposed as `state.wildcard`, just like a `:param` value:
   <h1>Viewing: {{ wildcard }}</h1>
 </div>
 ```
+## Accessing Active Route Data
 
+Components can access information about the currently active route using the reactive `$route` getter provided by `AvenxComponent`.
+
+The `$route` object exposes the following properties:
+
+| Property | Description |
+| -------- | ----------- |
+| `$route.params` | Contains the dynamic route parameters extracted from the current URL. |
+| `$route.hash` | Returns the current route hash. |
+| `$route.page` | Returns the active page associated with the current route. |
+
+### Example
+
+The following example shows how to access a route parameter inside a component:
+
+```javascript
+import { AvenxComponent } from "avenx-core/runtime";
+
+export default class UserProfile extends AvenxComponent {
+  onMount() {
+    console.log(this.$route.params.id);
+  }
+}
+```
+
+If the current route is:
+
+```text
+#/profile/42
+```
+
+Then:
+
+```javascript
+this.$route.params.id; // "42"
+```
 ## 4. In-Place Parameter Updates
 
 :::caution
@@ -130,9 +209,38 @@ Only named routes count when checking whether another router "owns" a hash — w
 Because routers coordinate through a shared global registry, always call `router.destroy()` when tearing down a router instance (for example, when unmounting a micro-frontend). A router left in `window.__avenx_routers` after it's no longer in use keeps its `hashchange` listener attached and continues to be consulted by other routers' fallback checks.
 :::
 
-## 6. Route Guards
+## 6. Page Titles
 
-## 5. Route Guards
+When a route is resolved, the router can automatically update `document.title`. Add a `title` property to any route definition — either a static string or a dynamic function that receives the parsed route parameters:
+
+```javascript
+app.initRouter({
+  '/':            { page: 'Home',    title: 'Home' },
+  '/profile/:id': { page: 'Profile', title: (params) => `Profile ${params.id}` },
+  '*':            { page: 'NotFound', title: 'Page Not Found' },
+});
+```
+
+### Title Prefix & Suffix
+
+To avoid repeating your app name in every route, pass `titlePrefix` or `titleSuffix` in the router options. They are prepended / appended to every resolved title automatically:
+
+```javascript
+app.initRouter(
+  {
+    '/':      { page: 'Home',    title: 'Home' },
+    '/about': { page: 'About',  title: 'About Us' },
+  },
+  { titleSuffix: ' — MyApp' },
+);
+// Results in "Home — MyApp", "About Us — MyApp"
+```
+
+:::note
+Routes that do not declare a `title` property leave `document.title` unchanged. This lets you opt individual routes out of automatic title management.
+:::
+
+## 7. Route Guards
 
 Guards decide whether a transition to a page is allowed. Create a guard using the CLI:
 

@@ -6,8 +6,9 @@ import ComponentParser from '../../lib/compiler/ComponentParser.js';
  * Creates an Avenx compiler instance.
  * @returns {object} Compiler API.
  */
-export function createCompiler() {
+export function createCompiler(options = {}) {
   const parser = new ComponentParser(new StyleProcessor());
+  const debug = options.debug ?? false;
 
   /**
    * Returns the generated class name from a component or page file.
@@ -32,9 +33,11 @@ export function createCompiler() {
     compileComponent(filePath) {
       const code = parser.parse(filePath);
 
-      console.log('\n================ COMPILED COMPONENT ================\n');
-      console.log(code);
-      console.log('\n====================================================\n');
+      if (debug) {
+        console.log('\n================ COMPILED COMPONENT ================\n');
+        console.log(code);
+        console.log('\n====================================================\n');
+      }
 
       const className = getClassName(filePath, '.component.js');
 
@@ -52,9 +55,11 @@ export function createCompiler() {
     compilePage(filePath) {
       const code = parser.parse(filePath, 'page');
 
-      console.log('\n================ COMPILED PAGE =====================\n');
-      console.log(code);
-      console.log('\n====================================================\n');
+      if (debug) {
+        console.log('\n================ COMPILED PAGE =====================\n');
+        console.log(code);
+        console.log('\n====================================================\n');
+      }
 
       const className = getClassName(filePath, '.page.js');
 

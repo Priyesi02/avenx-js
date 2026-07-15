@@ -17,7 +17,7 @@ import {
  * @returns {import('vite').Plugin}
  */
 export default function avenxPlugin(options = {}) {
-  const compiler = createCompiler();
+  const compiler = createCompiler(options);
   const debug = options.debug ?? false;
 
   /**

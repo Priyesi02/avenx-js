@@ -6,14 +6,21 @@ import { fileURLToPath, pathToFileURL } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Determine which folder to run based on command line arguments
-// e.g. "node test/run-tests.js unit" or "node test/run-tests.js" for all
-const filter = process.argv[2] || '';
+// Parse command line arguments to detect watch flag and isolate the filter
+const args = process.argv.slice(2);
+const isWatchMode = args.includes('--watch') || args.includes('-w');
+const filterArgs = args.filter((arg) => arg !== '--watch' && arg !== '-w');
+const filter = filterArgs[0] || '';
 const baseDir = path.join(__dirname, filter);
 
+let isRunning = false;
+let isPendingRerun = false;
+let debounceTimeout = null;
+
 /**
- *
- * @param dir
+ * Finds all test files recursively under a directory.
+ * @param {string} dir
+ * @returns {string[]}
  */
 function findTestFiles(dir) {
   let results = [];
@@ -34,8 +41,9 @@ function findTestFiles(dir) {
 }
 
 /**
- *
- * @param file
+ * Runs a single test file by forking a child process.
+ * @param {string} file
+ * @returns {Promise<{file: string, success: boolean, code?: number}>}
  */
 async function runTestFile(file) {
   const relativePath = path.relative(path.join(__dirname, '..'), file);
@@ -60,6 +68,162 @@ async function runTestFile(file) {
   });
 }
 
+/**
+ * Rebuilds the Avenx runtime.
+ * @returns {Promise<void>}
+ */
+function rebuild() {
+  return new Promise((resolve, reject) => {
+    const buildPath = path.resolve(__dirname, '../scripts/build.js');
+    const child = fork(buildPath, [], { stdio: 'inherit' });
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Build failed with exit code ${code}`));
+      }
+    });
+  });
+}
+
+/**
+ * Executes the entire test suite once.
+ * @returns {Promise<{success: boolean, count: number}>}
+ */
+async function runOnce() {
+  const files = findTestFiles(baseDir);
+
+  // Exclude the runner itself if it was matched (it shouldn't be as it's not .test.js)
+  const testFiles = files.filter((f) => f !== __filename);
+
+  if (testFiles.length === 0) {
+    console.log('No tests found.');
+    return { success: true, count: 0 };
+  }
+
+  console.log(`Found ${testFiles.length} test files to run.`);
+
+  const results = [];
+  for (const file of testFiles) {
+    const result = await runTestFile(file);
+    results.push(result);
+  }
+
+  console.log('\n======================================');
+  console.log('📊 Test Run Summary');
+  console.log('======================================');
+
+  let passed = 0;
+  let failed = 0;
+
+  results.forEach((r) => {
+    if (r.success) {
+      console.log(`  ✅ PASSED: ${r.file}`);
+      passed++;
+    } else {
+      console.log(`  ❌ FAILED: ${r.file} (Exit code: ${r.code})`);
+      failed++;
+    }
+  });
+
+  console.log('--------------------------------------');
+  console.log(`Total: ${results.length} | Passed: ${passed} | Failed: ${failed}`);
+  console.log('======================================');
+
+  return { success: failed === 0, count: results.length };
+}
+
+/**
+ * Triggers rebuilding assets and executing tests with deduplication.
+ */
+async function triggerRun() {
+  if (isRunning) {
+    isPendingRerun = true;
+    return;
+  }
+
+  isRunning = true;
+  isPendingRerun = false;
+
+  try {
+    console.clear();
+    console.log('🔄 File change detected. Re-running tests...\n');
+
+    try {
+      await rebuild();
+    } catch (err) {
+      console.error('Build failed:', err.message);
+    }
+
+    await runOnce();
+  } catch (error) {
+    console.error('Execution error:', error);
+  } finally {
+    isRunning = false;
+    console.log('\n👀 Watching for file changes in lib/ and test/...');
+    if (isPendingRerun) {
+      // Small timeout to prevent immediate tight loop in case of fast filesystem events
+      setTimeout(() => {
+        triggerRun();
+      }, 50);
+    }
+  }
+}
+
+/**
+ * Sets up filesystem watching on source and test directories.
+ */
+function startWatcher() {
+  const libDir = path.resolve(__dirname, '../lib');
+  const testDir = path.resolve(__dirname, '../test');
+  const watchOptions = { recursive: true };
+
+  const onWatchEvent = (eventType, filename) => {
+    if (!filename) return;
+
+    // Normalize path separators to forward slash
+    const relativePath = filename.replace(/\\/g, '/');
+
+    // Ignore test-project, scratch, and other temporary files/dirs
+    if (
+      relativePath.includes('test-project') ||
+      relativePath.includes('scratch') ||
+      relativePath.startsWith('.') ||
+      relativePath.includes('/.') ||
+      relativePath.endsWith('~')
+    ) {
+      return;
+    }
+
+    // Only trigger on source or test asset extensions
+    const ext = path.extname(relativePath);
+    if (!['.js', '.json', '.template', '.md'].includes(ext)) {
+      return;
+    }
+
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    debounceTimeout = setTimeout(() => {
+      triggerRun();
+    }, 100);
+  };
+
+  try {
+    if (fs.existsSync(libDir)) {
+      fs.watch(libDir, watchOptions, onWatchEvent);
+    }
+    if (fs.existsSync(testDir)) {
+      fs.watch(testDir, watchOptions, onWatchEvent);
+    }
+  } catch (error) {
+    console.error('Failed to start watcher:', error);
+  }
+
+  console.log('\n👀 Watching for file changes in lib/ and test/...');
+}
+
 (async () => {
   try {
     if (!fs.existsSync(baseDir)) {
@@ -67,49 +231,19 @@ async function runTestFile(file) {
       process.exit(1);
     }
 
-    const files = findTestFiles(baseDir);
-
-    // Exclude the runner itself if it was matched (it shouldn't be as it's not .test.js)
-    const testFiles = files.filter((f) => f !== __filename);
-
-    if (testFiles.length === 0) {
-      console.log('No tests found.');
-      process.exit(0);
-    }
-
-    console.log(`Found ${testFiles.length} test files to run.`);
-
-    const results = [];
-    for (const file of testFiles) {
-      const result = await runTestFile(file);
-      results.push(result);
-    }
-
-    console.log('\n======================================');
-    console.log('📊 Test Run Summary');
-    console.log('======================================');
-
-    let passed = 0;
-    let failed = 0;
-
-    results.forEach((r) => {
-      if (r.success) {
-        console.log(`  ✅ PASSED: ${r.file}`);
-        passed++;
-      } else {
-        console.log(`  ❌ FAILED: ${r.file} (Exit code: ${r.code})`);
-        failed++;
+    if (isWatchMode) {
+      console.clear();
+      console.log('🔄 Initializing watch mode...');
+      try {
+        await rebuild();
+      } catch (err) {
+        console.error('Initial build failed:', err.message);
       }
-    });
-
-    console.log('--------------------------------------');
-    console.log(`Total: ${results.length} | Passed: ${passed} | Failed: ${failed}`);
-    console.log('======================================');
-
-    if (failed > 0) {
-      process.exit(1);
+      await runOnce();
+      startWatcher();
     } else {
-      process.exit(0);
+      const { success } = await runOnce();
+      process.exit(success ? 0 : 1);
     }
   } catch (err) {
     console.error('Test runner failed unexpectedly:', err);

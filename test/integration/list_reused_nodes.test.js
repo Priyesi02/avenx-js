@@ -674,6 +674,73 @@ global.Node = {
     assert.strictEqual(unbindCalledWith, mockItem, 'Unbind should be called with the removed element');
 
     console.log('  ✅ ListManager event unbinding on element removal tests passed!');
+
+    // ==========================================
+    // 4. Test DOM Node Recycling and state resetting in ListManager
+    // ==========================================
+    console.log('🧪 Testing ListManager DOM Node Recycling and State Reset...');
+
+    const recycleEvaluator = {
+      evaluateExpression(expr, scope) {
+        if (expr === 'items') return scope.items;
+        if (expr === 'item.text') return scope.item.text;
+        return null;
+      },
+    };
+
+    const recycleRenderer = {
+      render(template, resolveExpression) {
+        const text = resolveExpression('item.text') || '';
+        return `<li><input type="text" value="${text}"></li>`;
+      },
+    };
+
+    const recycleListManager = new ListManager(recycleEvaluator, recycleRenderer);
+
+    const recycleTemplateEl = createMockElementNode('template', {
+      'data-ax-for': 'items',
+      'data-ax-as': 'item',
+    });
+    const recycleParentEl = createMockElementNode('div', {}, [recycleTemplateEl]);
+
+    // Initial render with one item
+    recycleListManager.process(recycleParentEl, { items: [{ id: 1, text: 'Original' }] }, {});
+    let renderedItems = recycleParentEl.childNodes.filter((node) => node.tagName === 'LI');
+    assert.strictEqual(renderedItems.length, 1);
+    const initialLi = renderedItems[0];
+
+    // Check initial input value
+    const inputEl = initialLi.querySelector('input');
+    assert.ok(inputEl, 'Input should be rendered inside li');
+    // Map attribute to property as Mock DOM doesn't sync properties initially
+    inputEl.value = inputEl.getAttribute('value');
+    assert.strictEqual(inputEl.value, 'Original');
+
+    // Simulate user focusing or typing something and setting input value manually
+    inputEl.value = 'User Changed Content';
+
+    // Remove the item from list to put it in the pool
+    recycleListManager.process(recycleParentEl, { items: [] }, {});
+    renderedItems = recycleParentEl.childNodes.filter((node) => node.tagName === 'LI');
+    assert.strictEqual(renderedItems.length, 0, 'List should be empty');
+
+    // Verify input value was reset to empty when put in pool (resetNodeState)
+    assert.strictEqual(inputEl.value, '', 'Input value should be reset on unmount/recycling');
+
+    // Now render a new item with a completely different id (key) and content
+    recycleListManager.process(recycleParentEl, { items: [{ id: 2, text: 'Recycled' }] }, {});
+    renderedItems = recycleParentEl.childNodes.filter((node) => node.tagName === 'LI');
+    assert.strictEqual(renderedItems.length, 1);
+    const recycledLi = renderedItems[0];
+
+    // Assert it is the exact same element reference recycled from the pool!
+    assert.strictEqual(recycledLi, initialLi, 'DOM element should be recycled and reused from the pool');
+
+    // Assert the content was updated successfully via patching
+    const recycledInputEl = recycledLi.querySelector('input');
+    assert.strictEqual(recycledInputEl.value, 'Recycled', 'Recycled element content should be patched correctly');
+
+    console.log('  ✅ ListManager DOM Node Recycling and State Reset tests passed!');
   } catch (error) {
     console.error('❌ List Item Node Stability and In-place Patching tests failed!');
     console.error(error);

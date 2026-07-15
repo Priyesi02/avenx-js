@@ -129,6 +129,48 @@ Details element:
 ```
 
 Bind boolean attributes to expressions that evaluate to `true` or `false`. Avenx-JS automatically adds or removes the attribute and updates the corresponding DOM property.
+## 4. Reactive Style Bindings (`data-ax-style`)
+
+Use the `data-ax-style` directive to dynamically apply inline CSS styles using a JavaScript object.
+
+### Basic Usage
+
+```html
+<p data-ax-style="{{ { color: state.textColor } }}">
+  Dynamic text color
+</p>
+```
+
+When `state.textColor` changes, the element's `color` style is updated automatically.
+
+### Multiple Style Bindings
+
+```html
+<div
+  data-ax-style="{{ {
+    color: state.textColor,
+    backgroundColor: state.backgroundColor,
+    fontSize: state.fontSize + 'px'
+  } }}"
+>
+  Styled content
+</div>
+```
+
+### Conditional Styles
+
+```html
+<span
+  data-ax-style="{{ {
+    color: state.isError ? 'red' : 'green',
+    fontWeight: state.isActive ? 'bold' : 'normal'
+  } }}"
+>
+  Status
+</span>
+```
+
+Using object syntax keeps templates more readable and maintainable than manually constructing inline style strings.
 
 ## 4. Loops (`<@for>`)
 

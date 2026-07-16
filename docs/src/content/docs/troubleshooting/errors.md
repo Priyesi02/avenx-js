@@ -116,6 +116,63 @@ This typically happens for a few common reasons:
 
 This validation exists purely to help catch mistakes early — it will not prevent your app from compiling or running, but an undeclared reference will typically resolve to `undefined` at runtime, so it's best to address the warning rather than ignore it.
 
+### AVX_W18 — RENDER_LIST_EVALUATION_FAILED
+
+**Warning Message**
+
+```
+Failed to evaluate list expression: {0}. Error: {1}
+```
+
+**Cause:** This warning is emitted at runtime when Avenx-JS attempts to evaluate a dynamic list expression used in `<@for>` or `data-ax-for`, but the expression throws an exception or does not resolve to a valid iterable. This commonly occurs when the referenced variable is `undefined`, `null`, not an array or iterable, or when the expression itself contains an error.
+
+**Resolution:** To resolve this warning:
+
+1. Ensure the list variable is declared before it is used in the template.
+2. Verify that the evaluated value is an array or another iterable object.
+3. Check for typographical errors in variable or property names.
+4. Initialize dynamic lists with an empty array when data may not yet be available.
+5. If the list depends on asynchronous data, ensure the data has loaded before rendering.
+
+**Incorrect**
+
+```javascript
+const state = {};
+```
+
+```html
+<@for="user in state.users">
+  {{ user.name }}
+</@for>
+```
+
+Since `state.users` is `undefined`, the renderer cannot evaluate the list expression.
+
+**Correct**
+
+```javascript
+const state = {
+  users: []
+};
+```
+
+```html
+<@for="user in state.users">
+  {{ user.name }}
+</@for>
+```
+
+**Defensive Example**
+
+```javascript
+const users = Array.isArray(state.users)
+  ? state.users
+  : [];
+```
+
+Using a default empty array ensures that the renderer always receives a valid iterable and prevents evaluation failures.
+
+
 ### AVX_W20 — RENDER_LIST_DUPLICATE_KEY
 
 ```text

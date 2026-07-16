@@ -159,7 +159,18 @@ users.map(user => (
 ```
 
 > **Note:** When duplicate keys are detected, Avenx automatically appends the item's index to the duplicate key so rendering can continue. This is a fallback mechanism and should not be relied upon as a substitute for stable, unique keys.
+## Compiler Warnings
 
+### Undeclared Variable or Method Warning
+...
+
+### AVX_W20 — RENDER_LIST_DUPLICATE_KEY
+...
+
+### AVX_W23 — DIRECTIVE_CLASS_EVALUATION_FAILED
+(new content here)
+
+## Runtime Codes (`AVX_R*`)
 ## Runtime Codes (`AVX_R*`)
 
 | Code        | Default Message                                                                         | Cause & Resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |

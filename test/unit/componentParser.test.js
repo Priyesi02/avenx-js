@@ -170,6 +170,28 @@ try {
   assert.ok(templateWithComments.includes('<div class="test">'));
   assert.ok(templateWithComments.includes('<p>Hello  World</p>'));
   console.log('  ✅ HTML Comments Stripping tests passed!');
+  console.log('🧪 Testing custom void tags from config...');
+  const cpWithVoidTags = new ComponentParser(sp, ['my-video', 'custom-icon']);
+
+  // Test: custom void tag without self-closing slash is treated as void
+  const templateCustomVoid = cpWithVoidTags.extractTemplate(
+    '<div><my-video src="a.mp4"><p>Trailing text</p></div>',
+    {},
+    'TestComp',
+  );
+  assert.ok(templateCustomVoid.includes('<my-video src="a.mp4" />'));
+  assert.ok(templateCustomVoid.includes('<p>Trailing text</p>'));
+
+  // Test: explicit self-closing slash still works without any config
+  const templateSelfClosing = cp.extractTemplate('<div><my-video src="a.mp4" /></div>', {}, 'TestComp');
+  assert.ok(templateSelfClosing.includes('<my-video src="a.mp4" />'));
+
+  // Test: unknown custom tags without the config entry are NOT treated as void
+  const templateUnknownTag = cp.extractTemplate('<div><my-video src="a.mp4"><p>Inside</p></my-video></div>', {}, 'TestComp');
+  assert.ok(templateUnknownTag.includes('<p>Inside</p>'));
+  assert.ok(!templateUnknownTag.includes('<my-video src="a.mp4" />'));
+
+  console.log('  ✅ Custom void tags tests passed!');
 } catch (error) {
   console.error('❌ ComponentParser tests failed!');
   console.error(error);

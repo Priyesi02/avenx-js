@@ -99,6 +99,30 @@ async function testLifecycleErrors() {
   );
   console.log('  ✅ onUnmount error caught and logged successfully without crashing.');
 
+  // 4. Test error in onBeforeMount
+  loggedErrors = [];
+  let beforeMountExecuted = false;
+  const compBeforeMountError = new AvenxComponent({ count: 0 }, {}, {}, '<div>Counter: {{ count }}</div>', {
+    onBeforeMount() {
+      beforeMountExecuted = true;
+      throw new Error('Simulated onBeforeMount error');
+    },
+  });
+
+  const mockEl4 = new MockDOMElement('div');
+  compBeforeMountError.__setMountTarget(mockEl4);
+  compBeforeMountError.__beforeMount();
+
+  assert.ok(beforeMountExecuted, 'onBeforeMount should be executed');
+  assert.strictEqual(loggedErrors.length, 1, 'Should log exactly one error');
+  assert.ok(loggedErrors[0].includes('AVX_R12'), 'Logged error should contain code AVX_R12');
+  assert.ok(loggedErrors[0].includes('onBeforeMount'), 'Logged error should contain onBeforeMount identifier');
+  assert.ok(
+    loggedErrors[0].includes('Simulated onBeforeMount error'),
+    'Logged error should contain original error message',
+  );
+  console.log('  ✅ onBeforeMount error caught and logged successfully without crashing.');
+
   restoreConsoleError();
   teardownDOMMock();
 }

@@ -185,6 +185,64 @@ The template references only declared state and actions, allowing the compiler t
 
 If a value is supplied dynamically at runtime and cannot always be determined during static analysis, the compiler may emit this warning even though the application behaves correctly. Verify the behaviour before deciding to ignore the warning.
 
+### AVX_W04 — COMPILER_UNMATCHED_FOR_TAG
+
+**Warning Message**
+
+```text
+Unmatched <@for> tags in template.
+```
+
+**Cause:** This warning is emitted during template compilation when the parser detects that a `<@for>` loop block is not properly matched with its corresponding closing tag. During static validation, Avenx-JS verifies that every loop block has a valid opening tag, closing tag, and correctly nested structure. If the parser encounters an incomplete or improperly nested loop, it emits this warning.
+
+This typically happens for a few common reasons:
+
+- A `<@for>` block is missing its closing `</@for>` tag.
+- Loop blocks are nested incorrectly.
+- A closing tag appears without a matching opening tag.
+- Template edits accidentally break the structure of a loop block.
+
+**Resolution:** To resolve this warning:
+
+1. Ensure every `<@for>` opening tag has a matching `</@for>` closing tag.
+2. Verify that nested loop blocks are opened and closed in the correct order.
+3. Check the template for misplaced or missing tags after editing.
+4. Use consistent indentation to make loop boundaries easier to identify.
+
+**Incorrect**
+
+```html
+<@for item="user" in="users">
+  <div>{{ user.name }}</div>
+```
+
+Since the `<@for>` block is never closed, the compiler cannot determine the end of the loop and emits **AVX_W04**.
+
+**Correct**
+
+```html
+<@for item="user" in="users">
+  <div>{{ user.name }}</div>
+</@for>
+```
+
+The loop block is properly opened and closed, allowing the compiler to parse the template successfully.
+
+**Defensive Example**
+
+```html
+<@for item="group" in="groups">
+  <h2>{{ group.name }}</h2>
+
+  <@for item="user" in="group.users">
+    <p>{{ user.name }}</p>
+  </@for>
+
+</@for>
+```
+
+When nesting loop blocks, always close the innermost loop before closing the outer loop. Proper nesting helps the compiler validate the template structure correctly.
+
 ### AVX_W11 — ROUTE_TITLE_EVALUATION_FAILED
 
 **Warning Message**
